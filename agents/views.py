@@ -5,6 +5,12 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from google import genai
+from web3 import Web3
+
+# Initialize Web3 for Sepolia Testnet
+w3 = Web3(Web3.HTTPProvider('https://rpc.sepolia.org'))
+PAYMENT_RECIPIENT = '0x9497FE4B4ECA41229b9337abAEbCC91eCc7be23B'
+PAYMENT_AMOUNT_ETH = 0.001
 
 def get_github_content(repo_url):
     """
@@ -55,9 +61,51 @@ def summarize_repo(request):
     try:
         data = json.loads(request.body)
         repo_url = data.get('repo_url')
+        tx_hash = data.get('tx_hash')
         
         if not repo_url:
             return JsonResponse({'error': 'Repository URL is required'}, status=400)
+            
+        if not tx_hash:
+            return JsonResponse({'error': 'Payment required. Please pay 0.001 ETH.'}, status=402)
+
+        # 0. Verify Sepolia Payment (with Retries)
+        import time
+        max_retries = 5
+        tx = None
+        receipt = None
+        
+        for attempt in range(max_retries):
+            try:
+                tx = w3.eth.get_transaction(tx_hash)
+                receipt = w3.eth.get_transaction_receipt(tx_hash)
+                if tx and receipt:
+                    break
+            except Exception:
+                # Transaction might not be indexed yet
+                pass
+            time.sleep(2) # Wait 2 seconds before retry
+            
+        if not tx or not receipt:
+             return JsonResponse({'error': 'Transaction not found on Sepolia chain after waiting. Please try again in a moment.'}, status=400)
+
+        try:
+            # Check status (1 = success)
+            if receipt['status'] != 1:
+                return JsonResponse({'error': 'Transaction failed on chain.'}, status=400)
+                
+            # Check recipient
+            if tx['to'].lower() != PAYMENT_RECIPIENT.lower():
+                return JsonResponse({'error': f'Invalid recipient. Sent to {tx["to"]}'}, status=400)
+                
+            # Check amount
+            value_eth = float(w3.from_wei(tx['value'], 'ether'))
+            if value_eth < 0.00099: 
+                 return JsonResponse({'error': f'Insufficient payment. Received {value_eth} ETH, needed {PAYMENT_AMOUNT_ETH} ETH'}, status=400)
+
+        except Exception as e:
+            print(f"Payment Validation Error: {e}")
+            return JsonResponse({'error': f'Payment verification failed: {str(e)}'}, status=400)
 
         # 1. Fetch README
         readme_content, error = get_github_content(repo_url)

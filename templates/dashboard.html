@@ -38,7 +38,7 @@
             <form id="agentForm" class="flex flex-col md:flex-row gap-4">
                 {% csrf_token %}
                 <input 
-                    type="url" 
+                    type="text" 
                     id="repoUrl" 
                     placeholder="https://github.com/owner/repository" 
                     required
@@ -49,8 +49,8 @@
                     id="generateBtn"
                     class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition flex items-center justify-center gap-2"
                 >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                    Run Agent
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    Pay 0.001 ETH & Analyze
                 </button>
             </form>
             <div id="formError" class="text-red-500 text-sm mt-3 hidden"></div>
@@ -89,6 +89,19 @@
         }
         return cookieValue;
     }
+    
+    // Reload page on network change to avoid state inconsistencies
+    if (window.ethereum) {
+        window.ethereum.on('chainChanged', () => {
+            window.location.reload();
+        });
+    }
+
+    const SEPOLIA_CHAIN_ID = '0xaa36a7'; // 11155111
+    const SEPOLIA_RPC_URL = 'https://rpc.sepolia.org';
+    const PAYMENT_RECIPIENT = '0x9497FE4B4ECA41229b9337abAEbCC91eCc7be23B';
+    const PAYMENT_AMOUNT = '0.001';
+
     // 1. Fetch Wallet Balance
     async function loadWalletData() {
         if (typeof window.ethereum !== 'undefined') {
@@ -102,7 +115,7 @@
                 const balance = await provider.getBalance(address);
                 const ethBalance = ethers.utils.formatEther(balance);
                 
-                document.getElementById('balanceDisplay').innerText = parseFloat(ethBalance).toFixed(4) + ' ETH';
+                document.getElementById('balanceDisplay').innerText = parseFloat(ethBalance).toFixed(4) + ' SepoliaETH';
             } catch (err) {
                 console.error("Balance Error:", err);
                 document.getElementById('balanceDisplay').innerText = "Err";
@@ -111,33 +124,128 @@
     }
     loadWalletData();
 
+    async function switchNetwork() {
+        if (!window.ethereum) return;
+        try {
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: SEPOLIA_CHAIN_ID }],
+            });
+        } catch (switchError) {
+            // This error code indicates that the chain has not been added to MetaMask.
+            if (switchError.code === 4902) {
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [
+                            {
+                                chainId: SEPOLIA_CHAIN_ID,
+                                chainName: 'Sepolia Testnet',
+                                rpcUrls: [SEPOLIA_RPC_URL],
+                                nativeCurrency: {
+                                    name: 'SepoliaETH',
+                                    symbol: 'ETH',
+                                    decimals: 18
+                                },
+                                blockExplorerUrls: ['https://sepolia.etherscan.io/']
+                            },
+                        ],
+                    });
+                } catch (addError) {
+                    console.error("Failed to add Sepolia network", addError);
+                    throw new Error("Failed to add Sepolia Testnet. Please add it manually.");
+                }
+            } else {
+                throw switchError;
+            }
+        }
+    }
+
     // 2. Handle Agent Form Submission
     document.getElementById('agentForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const repoUrl = document.getElementById('repoUrl').value;
+        const repoUrl = document.getElementById('repoUrl').value.trim();
         const generateBtn = document.getElementById('generateBtn');
         const loadingState = document.getElementById('loadingState');
         const resultSection = document.getElementById('resultSection');
         const summaryContent = document.getElementById('summaryContent');
         const formError = document.getElementById('formError');
+        const statusText = loadingState.querySelector('h3');
+        const statusDesc = loadingState.querySelector('p');
 
         // Reset UI
         formError.classList.add('hidden');
         resultSection.classList.add('hidden');
+        
+        // Step 0: Pre-Payment Validation
+        if (!repoUrl) {
+            formError.innerText = "Please enter a valid GitHub Repository URL.";
+            formError.classList.remove('hidden');
+            return;
+        }
+
         loadingState.classList.remove('hidden');
         generateBtn.disabled = true;
         generateBtn.classList.add('opacity-75');
+        
+        // Step 1: Check Wallet
+        if (typeof window.ethereum === 'undefined') {
+            formError.innerText = "Please install MetaMask to make payments.";
+            formError.classList.remove('hidden');
+            loadingState.classList.add('hidden');
+            generateBtn.disabled = false;
+            generateBtn.classList.remove('opacity-75');
+            return;
+        }
 
         try {
+            // Step 1: Switch to Sepolia (if needed)
+            statusText.innerText = "Switching Network...";
+            statusDesc.innerText = "Please confirm network switch to Sepolia Testnet.";
+            await switchNetwork();
+
+            // Re-initialize provider after switch to ensure it picks up the new chain
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            const signer = provider.getSigner();
+
+            // Balance Check
+            const balance = await signer.getBalance();
+            const requiredAmount = ethers.utils.parseEther(PAYMENT_AMOUNT);
+            
+            // Add a small buffer for gas
+            if (balance.lt(requiredAmount)) {
+                throw new Error("Insufficient SepoliaETH balance. You need at least 0.001 ETH.");
+            }
+
+            // Step 2: Send Payment
+            statusText.innerText = "Processing Payment...";
+            statusDesc.innerText = `Sending ${PAYMENT_AMOUNT} ETH to authorize analysis...`;
+
+            const tx = await signer.sendTransaction({
+                to: PAYMENT_RECIPIENT,
+                value: requiredAmount
+            });
+
+            statusDesc.innerText = "Waiting for transaction confirmation...";
+            await tx.wait(); // Wait for 1 confirmation
+
+            // Step 3: Call Backend with Hash
+            statusText.innerText = "Analyzing Repository...";
+            statusDesc.innerText = "Payment confirmed. Generating summary...";
+
             // CALL DJANGO BACKEND
             const response = await fetch('/api/summarize/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken') // Ensure getCookie function is available
+                    'X-CSRFToken': getCookie('csrftoken') 
                 },
-                body: JSON.stringify({ repo_url: repoUrl })
+                body: JSON.stringify({ 
+                    repo_url: repoUrl,
+                    tx_hash: tx.hash 
+                })
             });
 
             const data = await response.json();
@@ -155,11 +263,24 @@
         } catch (error) {
             console.error(error);
             loadingState.classList.add('hidden');
-            formError.innerText = error.message;
+            
+            // Nice error message handling
+            let msg = error.message;
+            if (error.code === 4001 || error.code === 'ACTION_REJECTED') {
+                msg = "Transaction rejected by user.";
+            } else if (msg.includes("insufficient funds")) {
+                msg = "Insufficient MON balance.";
+            }
+
+            formError.innerText = msg;
             formError.classList.remove('hidden');
         } finally {
             generateBtn.disabled = false;
             generateBtn.classList.remove('opacity-75');
+            
+            // Reset text
+            statusText.innerText = "Analyzing Repository..."; 
+            statusDesc.innerText = "Fetching metadata and generating summary.";
         }
     });
 </script>
