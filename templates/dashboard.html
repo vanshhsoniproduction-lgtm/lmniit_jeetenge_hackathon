@@ -98,7 +98,7 @@
     }
 
     const SEPOLIA_CHAIN_ID = '0xaa36a7'; // 11155111
-    const SEPOLIA_RPC_URL = 'https://rpc.sepolia.org';
+    const SEPOLIA_RPC_URL = 'https://ethereum-sepolia.publicnode.com';
     const PAYMENT_RECIPIENT = '0x9497FE4B4ECA41229b9337abAEbCC91eCc7be23B';
     const PAYMENT_AMOUNT = '0.001';
 
@@ -229,11 +229,12 @@
             });
 
             statusDesc.innerText = "Waiting for transaction confirmation...";
-            await tx.wait(); // Wait for 1 confirmation
+            const receipt = await tx.wait(); // Wait for 1 confirmation
+            console.log("Tx Confirmed:", receipt.transactionHash);
 
             // Step 3: Call Backend with Hash
-            statusText.innerText = "Analyzing Repository...";
-            statusDesc.innerText = "Payment confirmed. Generating summary...";
+            statusText.innerText = "Verifying & Analyzing...";
+            statusDesc.innerText = "Payment confirmed on chain. Generating summary (this may take 20s)...";
 
             // CALL DJANGO BACKEND
             const response = await fetch('/api/summarize/', {

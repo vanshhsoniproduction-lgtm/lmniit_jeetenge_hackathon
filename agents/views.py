@@ -8,7 +8,7 @@ from google import genai
 from web3 import Web3
 
 # Initialize Web3 for Sepolia Testnet
-w3 = Web3(Web3.HTTPProvider('https://rpc.sepolia.org'))
+w3 = Web3(Web3.HTTPProvider('https://ethereum-sepolia.publicnode.com'))
 PAYMENT_RECIPIENT = '0x9497FE4B4ECA41229b9337abAEbCC91eCc7be23B'
 PAYMENT_AMOUNT_ETH = 0.001
 
@@ -71,7 +71,7 @@ def summarize_repo(request):
 
         # 0. Verify Sepolia Payment (with Retries)
         import time
-        max_retries = 5
+        max_retries = 10
         tx = None
         receipt = None
         
@@ -86,8 +86,14 @@ def summarize_repo(request):
                 pass
             time.sleep(2) # Wait 2 seconds before retry
             
-        if not tx or not receipt:
-             return JsonResponse({'error': 'Transaction not found on Sepolia chain after waiting. Please try again in a moment.'}, status=400)
+        if not tx:
+             # Even if receipt is missing, if we see the TX in mempool relevant to us, maybe we can proceed? 
+             # For safety, let's stick to receipt but allow longer wait.
+             return JsonResponse({'error': 'Transaction not found on chain yet. Please wait a few seconds and try again.'}, status=400)
+        
+        if not receipt:
+             return JsonResponse({'error': 'Transaction is pending but not confirmed. Please wait for one confirmation.'}, status=400)
+
 
         try:
             # Check status (1 = success)
