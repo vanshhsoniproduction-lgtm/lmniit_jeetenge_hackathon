@@ -29,37 +29,119 @@
         </div>
     </nav>
 
-    <main class="max-w-4xl mx-auto mt-10 p-6">
+    <main class="max-w-6xl mx-auto mt-10 p-6">
         
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8">
-            <h2 class="text-2xl font-bold text-slate-900 mb-2">Generate Repo Summary</h2>
-            <p class="text-slate-500 mb-6">Enter a public GitHub URL to get an AI-powered breakdown.</p>
+        <!-- URL Input Section -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8 sticky top-4 z-10">
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Target Repository</h2>
+            <p class="text-slate-500 mb-6">Enter the GitHub URL you want to analyze.</p>
             
-            <form id="agentForm" class="flex flex-col md:flex-row gap-4">
-                {% csrf_token %}
+            <div class="flex flex-col md:flex-row gap-4">
                 <input 
                     type="text" 
                     id="repoUrl" 
                     placeholder="https://github.com/owner/repository" 
                     required
-                    class="flex-1 px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition"
+                    class="flex-1 px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition w-full"
                 >
-                <button 
-                    type="submit" 
-                    id="generateBtn"
-                    class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition flex items-center justify-center gap-2"
-                >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                    Pay 0.001 ETH & Analyze
-                </button>
-            </form>
+            </div>
             <div id="formError" class="text-red-500 text-sm mt-3 hidden"></div>
+        </div>
+
+        <!-- Agents Grid -->
+        <h3 class="text-xl font-bold text-slate-800 mb-4 px-1">Select an AI Agent</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            
+            <!-- 1. Setup Runner -->
+            <div class="agent-card bg-white p-6 rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md cursor-pointer transition group" data-agent="setup_runner">
+                <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center mb-4 text-xl">🚀</div>
+                <h4 class="font-bold text-lg mb-2 group-hover:text-indigo-600">Setup Runner</h4>
+                <p class="text-sm text-slate-500 mb-4">Extracts installation and run steps from README to get you started cleanly.</p>
+                <span class="text-xs font-semibold bg-slate-100 px-2 py-1 rounded text-slate-600">0.001 ETH</span>
+            </div>
+
+            <!-- 2. Architecture Map -->
+            <div class="agent-card bg-white p-6 rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md cursor-pointer transition group" data-agent="architecture">
+                <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4 text-xl">🏗️</div>
+                <h4 class="font-bold text-lg mb-2 group-hover:text-blue-600">Architecture Map</h4>
+                <p class="text-sm text-slate-500 mb-4">Maps out the project structure, key modules, and data flow.</p>
+                <span class="text-xs font-semibold bg-slate-100 px-2 py-1 rounded text-slate-600">0.001 ETH</span>
+            </div>
+
+            <!-- 3. Contributing Guide -->
+            <div class="agent-card bg-white p-6 rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md cursor-pointer transition group" data-agent="contributing">
+                <div class="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center mb-4 text-xl">🤝</div>
+                <h4 class="font-bold text-lg mb-2 group-hover:text-green-600">Contributing Guide</h4>
+                <p class="text-sm text-slate-500 mb-4">Explains how to open PRs, branch naming, and testing standards.</p>
+                <span class="text-xs font-semibold bg-slate-100 px-2 py-1 rounded text-slate-600">0.001 ETH</span>
+            </div>
+
+             <!-- 4. Issue Triage -->
+             <div class="agent-card bg-white p-6 rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md cursor-pointer transition group" data-agent="issues">
+                <div class="w-10 h-10 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center mb-4 text-xl">🐞</div>
+                <h4 class="font-bold text-lg mb-2 group-hover:text-orange-600">Issue Triage</h4>
+                <p class="text-sm text-slate-500 mb-4">Groups open issues into 'Good First Issue', 'Bugs', and 'Features'.</p>
+                <span class="text-xs font-semibold bg-slate-100 px-2 py-1 rounded text-slate-600">0.001 ETH</span>
+            </div>
+
+            <!-- 5. PR Reviewer -->
+            <div class="agent-card bg-white p-6 rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md cursor-pointer transition group" data-agent="pr_review">
+                <div class="w-10 h-10 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center mb-4 text-xl">🧐</div>
+                <h4 class="font-bold text-lg mb-2 group-hover:text-purple-600">PR Reviewer</h4>
+                <p class="text-sm text-slate-500 mb-4">Reviews the latest PR for code quality, risks, and suggestions.</p>
+                <span class="text-xs font-semibold bg-slate-100 px-2 py-1 rounded text-slate-600">0.001 ETH</span>
+            </div>
+
+            <!-- 6. Release Notes -->
+            <div class="agent-card bg-white p-6 rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md cursor-pointer transition group" data-agent="release_notes">
+                <div class="w-10 h-10 bg-pink-100 text-pink-600 rounded-lg flex items-center justify-center mb-4 text-xl">📝</div>
+                <h4 class="font-bold text-lg mb-2 group-hover:text-pink-600">Release Notes</h4>
+                <p class="text-sm text-slate-500 mb-4">Summarizes recent releases and identifies breaking changes.</p>
+                <span class="text-xs font-semibold bg-slate-100 px-2 py-1 rounded text-slate-600">0.001 ETH</span>
+            </div>
+
+            <!-- 7. Dependency Risk -->
+            <div class="agent-card bg-white p-6 rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md cursor-pointer transition group" data-agent="dependencies">
+                <div class="w-10 h-10 bg-red-100 text-red-600 rounded-lg flex items-center justify-center mb-4 text-xl">🛡️</div>
+                <h4 class="font-bold text-lg mb-2 group-hover:text-red-600">Dependency Risk</h4>
+                <p class="text-sm text-slate-500 mb-4">Scans dependencies for outdated packages and potential risks.</p>
+                <span class="text-xs font-semibold bg-slate-100 px-2 py-1 rounded text-slate-600">0.001 ETH</span>
+            </div>
+
+             <!-- 8. License & Usage -->
+             <div class="agent-card bg-white p-6 rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md cursor-pointer transition group" data-agent="license">
+                <div class="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-lg flex items-center justify-center mb-4 text-xl">⚖️</div>
+                <h4 class="font-bold text-lg mb-2 group-hover:text-yellow-600">License & Usage</h4>
+                <p class="text-sm text-slate-500 mb-4">Checks if you can use this repo commercially and explains limits.</p>
+                <span class="text-xs font-semibold bg-slate-100 px-2 py-1 rounded text-slate-600">0.001 ETH</span>
+            </div>
+            
+            <!-- Default / Base (Hidden/Included as fallback or separate card if needed, but Setup Runner covers mostly) -->
+             <div class="agent-card bg-white p-6 rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md cursor-pointer transition group" data-agent="summary">
+                <div class="w-10 h-10 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center mb-4 text-xl">📄</div>
+                <h4 class="font-bold text-lg mb-2 group-hover:text-indigo-600">General Summary</h4>
+                <p class="text-sm text-slate-500 mb-4">The classic overview of the project, features, and stack.</p>
+                <span class="text-xs font-semibold bg-slate-100 px-2 py-1 rounded text-slate-600">0.001 ETH</span>
+            </div>
+
+        </div>
+
+        <div class="text-center mb-8">
+            <button 
+                id="generateBtn"
+                disabled
+                class="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-3 mx-auto text-lg"
+            >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <span id="btnText">Select an Agent to Run</span>
+            </button>
         </div>
 
         <div id="loadingState" class="hidden text-center py-12">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <h3 class="text-lg font-medium text-slate-700">Analyzing Repository...</h3>
-            <p class="text-slate-500">Fetching metadata and generating summary.</p>
+            <h3 class="text-lg font-medium text-slate-700">Initializing Agent...</h3>
+            <p class="text-slate-500">Connecting to Sepolia network.</p>
         </div>
 
         <div id="resultSection" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
@@ -69,7 +151,7 @@
             </div>
             
             <div id="summaryContent" class="prose prose-indigo max-w-none text-slate-700">
-                </div>
+            </div>
         </div>
 
     </main>
@@ -101,6 +183,7 @@
     const SEPOLIA_RPC_URL = 'https://ethereum-sepolia.publicnode.com';
     const PAYMENT_RECIPIENT = '0x9497FE4B4ECA41229b9337abAEbCC91eCc7be23B';
     const PAYMENT_AMOUNT = '0.001';
+    let selectedAgent = null;
 
     // 1. Fetch Wallet Balance
     async function loadWalletData() {
@@ -161,8 +244,29 @@
         }
     }
 
-    // 2. Handle Agent Form Submission
-    document.getElementById('agentForm').addEventListener('submit', async (e) => {
+    // Agent Selection Logic
+    document.querySelectorAll('.agent-card').forEach(card => {
+        card.addEventListener('click', () => {
+            // Remove active class from all
+            document.querySelectorAll('.agent-card').forEach(c => {
+                c.classList.remove('ring-2', 'ring-indigo-600', 'bg-indigo-50');
+            });
+            
+            // Add active class to clicked
+            card.classList.add('ring-2', 'ring-indigo-600', 'bg-indigo-50');
+            
+            selectedAgent = card.dataset.agent;
+            
+            // Enable button
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = false;
+            document.getElementById('btnText').innerText = `Pay 0.001 ETH & Run ${card.querySelector('h4').innerText}`;
+        });
+    });
+
+
+    // 2. Handle Agent Execution
+    document.getElementById('generateBtn').addEventListener('click', async (e) => {
         e.preventDefault();
         
         const repoUrl = document.getElementById('repoUrl').value.trim();
@@ -178,9 +282,16 @@
         formError.classList.add('hidden');
         resultSection.classList.add('hidden');
         
-        // Step 0: Pre-Payment Validation
+        // Step 0: Validation
         if (!repoUrl) {
             formError.innerText = "Please enter a valid GitHub Repository URL.";
+            formError.classList.remove('hidden');
+            window.scrollTo(0,0);
+            return;
+        }
+        
+        if (!selectedAgent) {
+             formError.innerText = "Please select an Agent to run from the grid.";
             formError.classList.remove('hidden');
             return;
         }
@@ -245,7 +356,8 @@
                 },
                 body: JSON.stringify({ 
                     repo_url: repoUrl,
-                    tx_hash: tx.hash 
+                    tx_hash: tx.hash,
+                    agent_type: selectedAgent
                 })
             });
 
@@ -260,6 +372,9 @@
             
             loadingState.classList.add('hidden');
             resultSection.classList.remove('hidden');
+            
+            // Scroll to result
+            resultSection.scrollIntoView({ behavior: 'smooth' });
 
         } catch (error) {
             console.error(error);
@@ -270,11 +385,12 @@
             if (error.code === 4001 || error.code === 'ACTION_REJECTED') {
                 msg = "Transaction rejected by user.";
             } else if (msg.includes("insufficient funds")) {
-                msg = "Insufficient MON balance.";
+                msg = "Insufficient SepoliaETH balance.";
             }
 
             formError.innerText = msg;
             formError.classList.remove('hidden');
+            window.scrollTo(0,0);
         } finally {
             generateBtn.disabled = false;
             generateBtn.classList.remove('opacity-75');
