@@ -1,0 +1,4 @@
+Django>=4.2
+eth-account>=0.8.0
+google-genai
+requests

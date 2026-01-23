@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RepoSage - AI GitHub Summarizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+</head>
+<body class="bg-slate-900 text-white font-sans antialiased">
+
+    <nav class="flex items-center justify-between px-6 py-4 bg-slate-800 border-b border-slate-700">
+        <div class="flex items-center space-x-2">
+            <svg class="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+            <span class="text-xl font-bold tracking-tight">RepoSage</span>
+        </div>
+        <div>
+            <a href="https://github.com" target="_blank" class="text-sm text-slate-400 hover:text-white transition">GitHub</a>
+        </div>
+    </nav>
+
+    <main class="flex flex-col items-center justify-center text-center mt-20 px-4">
+        <div class="max-w-3xl space-y-6">
+            <h1 class="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
+                Summarize any GitHub repo in seconds
+            </h1>
+            <p class="text-lg text-slate-400">
+                Stop wasting time reading thousands of lines of code. Connect your wallet and let our AI agent break down complex repositories into simple summaries.
+            </p>
+            
+            <div class="pt-4">
+                <button id="connectBtn" class="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg shadow-indigo-500/30 transition-all transform hover:scale-105 flex items-center justify-center mx-auto gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <span>Get Started with MetaMask</span>
+                </button>
+                <div id="status" class="mt-4 text-sm text-indigo-300 h-6"></div>
+                <div id="error" class="mt-2 text-sm text-red-400 font-semibold"></div>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6 mt-20 max-w-5xl w-full text-left">
+            <div class="p-6 bg-slate-800 rounded-xl border border-slate-700 hover:border-indigo-500 transition">
+                <div class="w-10 h-10 bg-indigo-900/50 rounded-lg flex items-center justify-center mb-4 text-indigo-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">MetaMask Login</h3>
+                <p class="text-slate-400 text-sm">Secure, passwordless authentication using your Web3 wallet signature.</p>
+            </div>
+
+            <div class="p-6 bg-slate-800 rounded-xl border border-slate-700 hover:border-indigo-500 transition">
+                <div class="w-10 h-10 bg-indigo-900/50 rounded-lg flex items-center justify-center mb-4 text-indigo-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">AI Summary Agent</h3>
+                <p class="text-slate-400 text-sm">Instantly extract features, installation steps, and tech stack details.</p>
+            </div>
+
+            <div class="p-6 bg-slate-800 rounded-xl border border-slate-700 hover:border-indigo-500 transition">
+                <div class="w-10 h-10 bg-indigo-900/50 rounded-lg flex items-center justify-center mb-4 text-indigo-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">NodeOps Deployed</h3>
+                <p class="text-slate-400 text-sm">Hosted on high-performance infrastructure for reliable uptime.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-20 py-6 text-center text-slate-600 text-sm">
+        &copy; 2026 RepoSage. Built for Hackathon.
+    </footer>
+
+<script>
+    const connectBtn = document.getElementById('connectBtn');
+    const statusDiv = document.getElementById('status');
+    const errorDiv = document.getElementById('error');
+
+    // Helper to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    connectBtn.addEventListener('click', async () => {
+        errorDiv.innerText = '';
+        statusDiv.innerText = 'Initializing Wallet...';
+        connectBtn.disabled = true;
+        connectBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+        if (typeof window.ethereum === 'undefined') {
+            errorDiv.innerText = 'MetaMask is not installed!';
+            connectBtn.disabled = false;
+            connectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            return;
+        }
+
+        try {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            const signer = provider.getSigner();
+            const address = await signer.getAddress();
+            
+            statusDiv.innerText = `Connected: ${address.substring(0,6)}... Requesting Nonce...`;
+
+            // Get Nonce
+            const nonceResponse = await fetch(`/auth/nonce/?address=${address}`);
+            if(!nonceResponse.ok) throw new Error("Failed to fetch nonce");
+            const nonceData = await nonceResponse.json();
+            
+            if (nonceData.error) throw new Error(nonceData.error);
+            
+            // Sign Message
+            const message = `Sign this message to log in to Django DApp: ${nonceData.nonce}`;
+            statusDiv.innerText = 'Please sign the message in MetaMask...';
+            
+            const signature = await signer.signMessage(message);
+
+            // Verify
+            statusDiv.innerText = 'Verifying signature...';
+            const verifyResponse = await fetch('/auth/verify/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ address, signature })
+            });
+
+            const verifyData = await verifyResponse.json();
+
+            if (verifyData.success) {
+                statusDiv.innerText = 'Login successful! Redirecting...';
+                window.location.href = verifyData.redirect_url;
+            } else {
+                throw new Error(verifyData.error || 'Verification failed');
+            }
+
+        } catch (err) {
+            console.error(err);
+            errorDiv.innerText = err.message || 'An error occurred';
+            statusDiv.innerText = '';
+            connectBtn.disabled = false;
+            connectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    });
+</script>
+</body>
+</html>
