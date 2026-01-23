@@ -84,7 +84,7 @@
                 <p class="text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-widest">Active Wallet</p>
                 <p class="text-xs text-indigo-400 break-all font-mono mb-2 truncate">{{ user.wallet_address }}</p>
                 <div class="flex items-center justify-between">
-                    <span id="balanceDisplay" class="text-sm font-bold text-white">-- ETH</span>
+                    <span id="balanceDisplay" class="text-sm font-bold text-white">-- MON</span>
                     <div class="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
                 </div>
             </div>
@@ -139,7 +139,7 @@
                             <div class="flex items-center justify-between border-t border-white/10 pt-6">
                                 <div class="flex flex-col">
                                     <span class="text-xs text-slate-500 uppercase font-bold">Est Cost</span>
-                                    <span class="text-emerald-400 font-mono">0.0004 - 0.0009 ETH</span>
+                                    <span class="text-emerald-400 font-mono">0.0002 - 0.0008 MON</span>
                                 </div>
                                 <button class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center group-hover:rotate-45 transition">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
@@ -173,7 +173,7 @@
                              <div class="flex items-center justify-between border-t border-white/10 pt-6">
                                 <div class="flex flex-col">
                                     <span class="text-xs text-slate-500 uppercase font-bold">Fixed Cost</span>
-                                    <span class="text-purple-400 font-mono">0.0011 ETH</span>
+                                    <span class="text-purple-400 font-mono">0.0011 MON</span>
                                 </div>
                                 <button class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center group-hover:rotate-45 transition">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
@@ -212,7 +212,7 @@
 
                     <button id="btn-run-github" onclick="runGithubAgent()" class="w-full py-4 bg-white text-black font-bold rounded-xl shadow-lg hover:shadow-indigo-500/50 hover:scale-[1.01] transition flex items-center justify-center gap-2">
                         <span>Execute Contract</span>
-                        <span class="bg-black/10 px-2 py-0.5 rounded text-xs font-mono">~0.0005 ETH</span>
+                        <span class="bg-black/10 px-2 py-0.5 rounded text-xs font-mono">~0.0002 MON</span>
                     </button>
                 </div>
             </div>
@@ -238,7 +238,7 @@
 
                     <button id="btn-run-audio" onclick="runAudioAgent()" class="w-full py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:shadow-purple-500/40 hover:scale-[1.01] transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                         <span>Transcribe & Analyze</span>
-                         <span class="bg-black/20 px-2 py-0.5 rounded text-xs font-mono">0.0011 ETH</span>
+                         <span class="bg-black/20 px-2 py-0.5 rounded text-xs font-mono">0.0011 MON</span>
                     </button>
                 </div>
             </div>
@@ -279,7 +279,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                     <div class="glass-panel p-6 rounded-2xl border-l-4 border-indigo-500">
                         <p class="text-xs font-bold text-slate-500 uppercase tracking-widest font-mono">Total Burn</p>
-                        <h3 class="text-3xl font-bold text-white mt-2" id="stat-total-spent">0.000 ETH</h3>
+                        <h3 class="text-3xl font-bold text-white mt-2" id="stat-total-spent">0.000 MON</h3>
                     </div>
                      <div class="glass-panel p-6 rounded-2xl border-l-4 border-purple-500">
                         <p class="text-xs font-bold text-slate-500 uppercase tracking-widest font-mono">Executions</p>
@@ -309,7 +309,7 @@
                                 <th class="px-6 py-4">Timestamp</th>
                                 <th class="px-6 py-4">Agent</th>
                                 <th class="px-6 py-4">Input Data</th>
-                                <th class="px-6 py-4">Fee (ETH)</th>
+                                <th class="px-6 py-4">Fee (MON)</th>
                                 <th class="px-6 py-4">Status</th>
                                 <th class="px-6 py-4 text-right">Action</th>
                             </tr>
@@ -335,6 +335,15 @@
     let currentGhType = 'summary';
     let selectedAudioFile = null;
 
+    // Prices (MON)
+    const PRICES = {
+        'summary': '0.0002',
+        'architecture': '0.0005',
+        'issues': '0.0003',
+        'pr_review': '0.0008',
+        'audio': '0.0011'
+    };
+
     function switchView(viewName) {
         ['home', 'github', 'audio', 'results', 'history'].forEach(v => {
             document.getElementById(`view-${v}`).classList.add('hidden');
@@ -347,6 +356,11 @@
         if(viewName === 'history') {
             document.getElementById('nav-history').classList.add('active', 'text-white');
             loadHistoryData();
+        }
+        
+        // Init Button Text if Github
+        if(viewName === 'github') {
+            updateGithubButton();
         }
     }
 
@@ -361,6 +375,13 @@
         btn.classList.add('active', 'border-indigo-500/50', 'bg-indigo-500/10', 'text-indigo-300');
         btn.classList.remove('border-white/10', 'bg-white/5', 'text-slate-400');
         currentGhType = type;
+        updateGithubButton();
+    }
+    
+    function updateGithubButton() {
+        const price = PRICES[currentGhType];
+        const btn = document.getElementById('btn-run-github');
+        btn.querySelector('span:last-child').innerText = `~${price} MON`;
     }
 
     // --- DRAG DROP ---
@@ -396,18 +417,41 @@
     
     // Dynamic Pricing
     function getPriceForAgent() {
-        if(selectedAudioFile) return '0.0011';
-        return (Math.random() * (0.0009 - 0.0001) + 0.0001).toFixed(4); // 0.0001 - 0.0009
+        if(selectedAudioFile) return PRICES['audio'];
+        return PRICES[currentGhType] || '0.0005';
     }
 
     async function processPayment(statusFn) {
         if (!window.ethereum) throw new Error("MetaMask not found");
         const provider = new ethers.providers.Web3Provider(window.ethereum);
+        
+        // Force Switch to Monad
+        try {
+             await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0x279f' }], // Chain 10143
+            });
+        } catch (switchError) {
+             // Add if missing
+             if (switchError.code === 4902) {
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: '0x279f',
+                        chainName: 'Monad Testnet',
+                        rpcUrls: ['https://testnet-rpc.monad.xyz'],
+                        nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
+                        blockExplorerUrls: ["http://testnet.monadexplorer.com/"]
+                    }],
+                });
+             }
+        }
+        
         await provider.send("eth_requestAccounts", []);
         const signer = provider.getSigner();
         
         const price = getPriceForAgent();
-        statusFn(`Signing Transfer: ${price} ETH...`);
+        statusFn(`Signing Transfer: ${price} MON...`);
         
         const tx = await signer.sendTransaction({
             to: PAYMENT_RECIPIENT,
@@ -584,7 +628,7 @@
         if(!res.ok) return;
         const data = await res.json();
 
-        document.getElementById('stat-total-spent').innerText = data.total_spent + " ETH";
+        document.getElementById('stat-total-spent').innerText = data.total_spent + " MON";
         document.getElementById('stat-total-files').innerText = data.history.length;
         
         const tbody = document.getElementById('history-table-body');

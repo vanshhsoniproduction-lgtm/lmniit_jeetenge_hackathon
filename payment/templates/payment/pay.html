@@ -17,7 +17,14 @@
         <div class="bg-black/40 rounded-xl p-6 border border-white/5 mb-6">
             <div class="flex justify-between items-center mb-4 pb-4 border-b border-white/5">
                 <span class="text-slate-500 text-sm">Amount</span>
+                {% if amount %}
                 <span class="text-2xl font-mono font-bold text-white">{{ amount }} <span class="text-indigo-400">MON</span></span>
+                {% else %}
+                <div class="relative w-1/2">
+                    <input type="number" step="0.0001" id="amountInput" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-1 text-right text-white font-mono font-bold focus:outline-none focus:border-indigo-500" placeholder="0.00">
+                    <span class="absolute right-10 top-1/2 -translate-y-1/2 text-indigo-400 font-bold text-xs pointer-events-none">MON</span>
+                </div>
+                {% endif %}
             </div>
             
             {% if note %}
@@ -50,7 +57,7 @@
                 </div>
 
                 <button id="payBtn" onclick="processPayment()" disabled class="w-full bg-slate-700 text-slate-400 py-4 rounded-xl font-bold text-lg cursor-not-allowed transition">
-                    Pay {{ amount }} MON
+                    {% if amount %}Pay {{ amount }} MON{% else %}Enter Amount{% endif %}
                 </button>
             </div>
         </div>
@@ -64,13 +71,14 @@
 
 {% block extra_scripts %}
 <script>
-    const MONAD_CHAIN_ID = '0xaa36a7'; // 11155111 in Hex (Sepolia)
-    const MONAD_CHAIN_NAME = 'Sepolia Testnet';
-    const MONAD_RPC = 'https://rpc.sepolia.org';
-    const EXPECTED_AMOUNT = "{{ amount }}";
+    const MONAD_CHAIN_ID = '0x279f'; // 10143 in Hex
+    const MONAD_CHAIN_NAME = 'Monad Testnet';
+    const MONAD_RPC = 'https://testnet-rpc.monad.xyz';
+    // If EXPECTED_AMOUNT is not "None" and not empty, use it. Otherwise null.
+    const FIXED_AMOUNT = "{{ amount|default_if_none:'' }}"; 
     const RECEIVER = "{{ receiver_wallet }}";
-    const REQUEST_ID = "{{ request_id|default:'None' }}"; // 'None' string if empty
-    
+    const REQUEST_ID = "{{ request_id|default:'None' }}";
+
     let provider, signer, userAddr;
 
     async function connectWallet() {
@@ -109,20 +117,33 @@
         const statusEl = document.getElementById('networkStatus');
         const payBtn = document.getElementById('payBtn');
         
-        if (chainId === 11155111) { // Sepolia Chain ID
-            statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.8)]"></span> Sepolia';
-            statusEl.className = "flex items-center gap-1 text-blue-400";
+        if (chainId === 10143) { // Monad Testnet Decimal
+            statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_5px_rgba(168,85,247,0.8)]"></span> Monad';
+            statusEl.className = "flex items-center gap-1 text-purple-400";
             
             payBtn.disabled = false;
             payBtn.classList.remove('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
-            payBtn.classList.add('btn-primary', 'shadow-lg'); // Use primary style
+            payBtn.classList.add('btn-primary', 'shadow-lg');
+            
+            // Check if amount is entered
+            if (!FIXED_AMOUNT) {
+                const inputVal = document.getElementById('amountInput').value;
+                if(!inputVal || inputVal <= 0) {
+                     payBtn.disabled = true;
+                     payBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                     payBtn.disabled = false;
+                     payBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+
         } else {
             statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500"></span> Wrong Net';
             statusEl.className = "flex items-center gap-1 text-red-400";
             
-            payBtn.innerText = "Switch to Sepolia";
+            payBtn.innerText = "Switch to Monad";
             payBtn.disabled = false;
-            payBtn.onclick = switchNetwork; // Change action
+            payBtn.onclick = switchNetwork; 
             payBtn.classList.remove('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
             payBtn.classList.add('bg-slate-600', 'text-white', 'hover:bg-slate-500');
         }
@@ -134,10 +155,8 @@
                 method: 'wallet_switchEthereumChain',
                 params: [{ chainId: MONAD_CHAIN_ID }],
             });
-            // checkNetwork called by reload or manual
             setTimeout(checkNetwork, 1000); 
         } catch (switchError) {
-            // This error code indicates that the chain has not been added to MetaMask.
             if (switchError.code === 4902) {
                 try {
                     await window.ethereum.request({
@@ -148,11 +167,11 @@
                                 chainName: MONAD_CHAIN_NAME,
                                 rpcUrls: [MONAD_RPC],
                                 nativeCurrency: {
-                                    name: "Sepolia ETH",
-                                    symbol: "ETH", 
+                                    name: "Monad",
+                                    symbol: "MON", 
                                     decimals: 18
                                 },
-                                blockExplorerUrls: ["https://sepolia.etherscan.io/"]
+                                blockExplorerUrls: ["http://testnet.monadexplorer.com/"]
                             },
                         ],
                     });
@@ -166,34 +185,38 @@
     }
 
     async function processPayment() {
-        // Reset onclick to this function if it was switched
         if(document.getElementById('payBtn').innerText.includes("Switch")) return switchNetwork();
+
+        // Determine amount
+        let payAmount = FIXED_AMOUNT;
+        if (!payAmount) {
+            payAmount = document.getElementById('amountInput').value;
+            if (!payAmount || parseFloat(payAmount) <= 0) {
+                showStatus("Please enter a valid amount.", "text-red-400");
+                return;
+            }
+        }
 
         const btn = document.getElementById('payBtn');
         btn.disabled = true;
         btn.innerText = "Sending...";
-        showStatus("Confirm transaction in MetaMask...", "text-indigo-400");
+        showStatus("Confirm transaction in MetaMask...", "text-purple-400");
 
         try {
             const tx = await signer.sendTransaction({
                 to: RECEIVER,
-                value: ethers.utils.parseEther(EXPECTED_AMOUNT)
+                value: ethers.utils.parseEther(payAmount.toString())
             });
 
             showStatus("Transaction Sent! Verifying...", "text-yellow-400 animate-pulse");
             console.log("Tx Hash:", tx.hash);
-
-            // Wait for receipt on client side potentially, but let's send to backend immediately to verify
-            // Or backend verifies. The backend code verifies status.
-            // Let's wait for client confirmation first to avoid race? 
-            // Better UX: Send hash to backend, backend waits/verifies.
             
             await verifyTransaction(tx.hash);
 
         } catch (err) {
             console.error(err);
             btn.disabled = false;
-            btn.innerText = "Pay " + EXPECTED_AMOUNT + " ETH";
+            btn.innerText = "Pay " + payAmount + " MON";
             showStatus(err.message.includes("user rejected") ? "Transaction rejected." : "Error: " + err.message, "text-red-400");
         }
     }
@@ -235,6 +258,24 @@
         const el = document.getElementById('statusMsg');
         el.innerText = msg;
         el.className = "mt-4 text-center text-sm font-medium block " + classes;
+    }
+
+    // Monitor input if we are in variable mode
+    if (!FIXED_AMOUNT) {
+        const input = document.getElementById('amountInput');
+        if(input) {
+            input.addEventListener('input', function() {
+                 const btn = document.getElementById('payBtn');
+                 btn.innerText = "Pay " + (this.value || "0") + " MON";
+                 if(this.value > 0) {
+                     btn.disabled = false;
+                     btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                 } else {
+                     btn.disabled = true;
+                     btn.classList.add('opacity-50', 'cursor-not-allowed');
+                 }
+            });
+        }
     }
 </script>
 {% endblock %}

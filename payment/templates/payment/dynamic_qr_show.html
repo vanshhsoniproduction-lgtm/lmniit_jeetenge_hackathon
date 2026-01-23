@@ -14,7 +14,7 @@
         </div>
 
         <h1 class="text-3xl font-bold text-white mb-2">Scan to Pay</h1>
-        <p class="text-slate-400 mb-8">Dynamic Payment Request on Sepolia.</p>
+        <p class="text-slate-400 mb-8">Dynamic Payment Request on Monad Testnet.</p>
 
         <div class="bg-white/5 inline-block p-4 rounded-xl border border-white/10 mb-6">
             <div id="qrcode" class="bg-white p-2 rounded-lg"></div>
@@ -23,7 +23,7 @@
         <div class="flex flex-col items-center gap-2 mb-8">
             <div class="text-sm font-bold text-slate-500 uppercase tracking-widest">Amount Due</div>
             <div class="text-4xl font-mono font-bold text-white flex items-center gap-2">
-                {{ payment_request.amount_mon }} <span class="text-emerald-400">ETH</span>
+                {{ payment_request.amount_mon }} <span class="text-emerald-400">MON</span>
             </div>
             {% if payment_request.note %}
             <div class="mt-2 px-4 py-2 bg-white/5 rounded-lg text-sm text-slate-300 border border-white/5">
@@ -78,7 +78,7 @@
         if (navigator.share) {
             navigator.share({
                 title: 'PayLink Request',
-                text: 'Please pay {{ payment_request.amount_mon }} ETH on Sepolia.',
+                text: 'Please pay {{ payment_request.amount_mon }} MON on Monad Testnet.',
                 url: payUrl,
             });
         } else {

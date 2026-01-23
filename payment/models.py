@@ -28,7 +28,7 @@ class PaymentTransaction(models.Model):
     request = models.ForeignKey(PaymentRequest, on_delete=models.CASCADE, related_name='transactions')
     payer_wallet = models.CharField(max_length=42)
     tx_hash = models.CharField(max_length=66, unique=True)
-    chain_id = models.CharField(max_length=10, default='11155111') # Sepolia ID
+    chain_id = models.CharField(max_length=10, default='10143') # Monad Testnet ID
     amount_mon = models.DecimalField(max_digits=20, decimal_places=8)
     verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

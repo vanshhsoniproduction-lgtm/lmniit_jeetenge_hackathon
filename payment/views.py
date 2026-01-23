@@ -10,9 +10,9 @@ from decimal import Decimal
 
 # CONSTANTS
 RECEIVER_WALLET = '0x9497FE4B4ECA41229b9337abAEbCC91eCc7be23B'
-# Sepolia Testnet
-RPC_URL = 'https://rpc.sepolia.org'
-CHAIN_ID = 11155111
+# Monad Testnet
+RPC_URL = 'https://testnet-rpc.monad.xyz'
+CHAIN_ID = 10143
 
 def get_web3():
     return Web3(Web3.HTTPProvider(RPC_URL))
@@ -30,7 +30,7 @@ def static_qr_view(request):
     """Show the Static QR code for fixed payments."""
     return render(request, 'payment/static_qr.html', {
         'receiver_wallet': RECEIVER_WALLET,
-        'amount': 0.10 # Default static amount
+        'amount': None # User chooses
     })
 
 @login_required
@@ -39,8 +39,8 @@ def pay_static_view(request):
     return render(request, 'payment/pay.html', {
         'mode': 'STATIC',
         'receiver_wallet': RECEIVER_WALLET,
-        'amount': 0.10,
-        'note': 'Static PayLink Transfer',
+        'amount': None, # User input needed
+        'note': 'Direct Transfer to Wallet',
         'request_id': None
     })
 

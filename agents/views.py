@@ -21,13 +21,14 @@ def new_getaddrinfo(*args, **kwargs):
 
 
 # Initialize Web3
-w3 = Web3(Web3.HTTPProvider('https://ethereum-sepolia.publicnode.com'))
+# Monad Testnet
+w3 = Web3(Web3.HTTPProvider('https://testnet-rpc.monad.xyz'))
 PAYMENT_RECIPIENT = '0x9497FE4B4ECA41229b9337abAEbCC91eCc7be23B'
 
 # --- Helpers ---
 
-def verify_payment(tx_hash, required_eth=0.001):
-    """Verifies Sepolia transaction."""
+def verify_payment(tx_hash, required_mon=0.001):
+    """Verifies Monad Testnet transaction."""
     max_retries = 10
     tx = None
     receipt = None
@@ -49,8 +50,8 @@ def verify_payment(tx_hash, required_eth=0.001):
         if receipt['status'] != 1: return "Transaction failed."
         if tx['to'].lower() != PAYMENT_RECIPIENT.lower(): return "Invalid recipient."
         val = float(w3.from_wei(tx['value'], 'ether'))
-        if val < (required_eth - 0.0001): # Small buffer
-            return f"Insufficient ETH. Sent {val}, needed {required_eth}"
+        if val < (required_mon - 0.0001): # Small buffer
+            return f"Insufficient MON. Sent {val}, needed {required_mon}"
     except Exception as e:
         return f"Verification error: {str(e)}"
     
@@ -138,9 +139,18 @@ def run_github_agent(request):
 
         print(f" > Repo: {repo_url} | Type: {agent_type} | Tx: {tx_hash}")
 
+        # Prices map (Must match Frontend)
+        PRICES = {
+            'summary': 0.0002,
+            'architecture': 0.0005,
+            'issues': 0.0003,
+            'pr_review': 0.0008
+        }
+        required_amt = PRICES.get(agent_type, 0.0005)
+
         # 1. Verify Payment
-        print(" > Verifying Payment...")
-        if err := verify_payment(tx_hash):
+        print(f" > Verifying Payment (Required: {required_amt})...")
+        if err := verify_payment(tx_hash, required_mon=required_amt):
             print(f" ! Payment Failed: {err}")
             return JsonResponse({'error': err}, status=400)
         print(" > Payment Verified.")
@@ -207,8 +217,8 @@ def run_audio_agent(request):
              return JsonResponse({'error': 'Missing file or Payment'}, status=400)
 
         # 1. Verify Payment
-        print(" > Verifying Payment...")
-        if err := verify_payment(tx_hash):
+        print(" > Verifying Payment (Required: 0.0011)...")
+        if err := verify_payment(tx_hash, required_mon=0.0011):
              print(f" ! Payment Failed: {err}")
              return JsonResponse({'error': err}, status=400)
         print(" > Payment Verified.")

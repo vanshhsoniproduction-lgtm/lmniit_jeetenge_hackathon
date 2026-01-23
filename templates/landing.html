@@ -70,7 +70,7 @@
             </h1>
             
             <p class="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-                Connect your wallet to unlock autonomous AI agents. Summarize repos, audit contracts, and extract meeting insights—paid per execution in ETH.
+                Connect your wallet to unlock autonomous AI agents. Summarize repos, audit contracts, and extract meeting insights—paid per execution in MON.
             </p>
 
             <div class="flex flex-col md:flex-row items-center justify-center gap-4 pt-4">
@@ -109,7 +109,7 @@
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                 </div>
                 <h3 class="text-xl font-bold mb-3">Verifiable Compute</h3>
-                <p class="text-slate-400 leading-relaxed">Every transaction is signed and verified on Sepolia. Pay-per-use with no hidden subscriptions.</p>
+                <p class="text-slate-400 leading-relaxed">Every transaction is signed and verified on Monad Testnet. Pay-per-use with no hidden subscriptions.</p>
             </div>
         </div>
 
@@ -160,6 +160,29 @@
             try {
                 const provider = new ethers.providers.Web3Provider(window.ethereum);
                 await provider.send("eth_requestAccounts", []);
+
+                 // Force Switch to Monad
+                try {
+                     await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0x279f' }], // Chain 10143
+                    });
+                } catch (switchError) {
+                     // Add if missing
+                     if (switchError.code === 4902) {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: '0x279f',
+                                chainName: 'Monad Testnet',
+                                rpcUrls: ['https://testnet-rpc.monad.xyz'],
+                                nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
+                                blockExplorerUrls: ["http://testnet.monadexplorer.com/"]
+                            }],
+                        });
+                     }
+                }
+
                 const signer = provider.getSigner();
                 const address = await signer.getAddress();
                 
