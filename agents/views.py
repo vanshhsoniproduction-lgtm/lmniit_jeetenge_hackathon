@@ -1,317 +1,291 @@
 import json
 import requests
 import time
+import os
+from datetime import timedelta
 from django.conf import settings
+from django.utils import timezone
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from django.contrib.auth.decorators import login_required
 from google import genai
+import socket
 from web3 import Web3
+from .models import AnalysisTransaction
 
-# Initialize Web3 for Sepolia Testnet
+# IPv4 Force Patch
+original_getaddrinfo = socket.getaddrinfo
+def new_getaddrinfo(*args, **kwargs):
+    responses = original_getaddrinfo(*args, **kwargs)
+    return [res for res in responses if res[0] == socket.AF_INET]
+
+
+# Initialize Web3
 w3 = Web3(Web3.HTTPProvider('https://ethereum-sepolia.publicnode.com'))
 PAYMENT_RECIPIENT = '0x9497FE4B4ECA41229b9337abAEbCC91eCc7be23B'
-PAYMENT_AMOUNT_ETH = 0.001
 
-# --- GitHub Helpers ---
+# --- Helpers ---
 
-def parse_repo_url(repo_url):
-    clean_url = repo_url.strip().removesuffix(".git")
-    if "github.com/" not in clean_url:
-        return None, None, "Invalid GitHub URL."
-    parts = clean_url.split("github.com/")
-    if len(parts) < 2: return None, None, "Invalid URL."
-    owner_repo = [x for x in parts[1].split("/") if x]
-    if len(owner_repo) < 2: return None, None, "Need owner/repo."
-    return owner_repo[0], owner_repo[1], None
-
-def fetch_github_api(url):
-    headers = {'Accept': 'application/vnd.github.v3+json'}
-    # Helper to add Auth if we had a token, but for public repos mostly fine strictly rate limited
-    # If the user has a GH token in settings, use it.
-    # headers['Authorization'] = f"token {settings.GITHUB_TOKEN}" 
+def verify_payment(tx_hash, required_eth=0.001):
+    """Verifies Sepolia transaction."""
+    max_retries = 10
+    tx = None
+    receipt = None
+    
+    # 1. Wait for tx to appear
+    for _ in range(max_retries):
+        try:
+            tx = w3.eth.get_transaction(tx_hash)
+            receipt = w3.eth.get_transaction_receipt(tx_hash)
+            if tx and receipt: break
+        except:
+            pass
+        time.sleep(1)
+        
+    if not tx: return "Transaction not found."
+    if not receipt: return "Transaction pending."
+    
     try:
-        response = requests.get(url, headers=headers)
-        return response
+        if receipt['status'] != 1: return "Transaction failed."
+        if tx['to'].lower() != PAYMENT_RECIPIENT.lower(): return "Invalid recipient."
+        val = float(w3.from_wei(tx['value'], 'ether'))
+        if val < (required_eth - 0.0001): # Small buffer
+            return f"Insufficient ETH. Sent {val}, needed {required_eth}"
     except Exception as e:
-        print(f"GH Fetch Error: {e}")
-        return None
-
-def get_file_content(owner, repo, file_path):
-    # Try raw fetch first for speed
-    url = f"https://raw.githubusercontent.com/{owner}/{repo}/HEAD/{file_path}"
-    resp = requests.get(url)
-    if resp.status_code == 200:
-        return resp.text
+        return f"Verification error: {str(e)}"
     
-    # Fallback to API if raw fails (e.g. private or weird branch)
-    api_url = f"https://api.github.com/repos/{owner}/{repo}/contents/{file_path}"
-    resp = fetch_github_api(api_url)
-    if resp and resp.status_code == 200:
-        import base64
-        content = resp.json().get('content', '')
-        return base64.b64decode(content).decode('utf-8')
-    return None
+    return None # Success
 
-def get_issue_context(owner, repo):
-    url = f"https://api.github.com/repos/{owner}/{repo}/issues?state=open&sort=created&per_page=15"
-    resp = fetch_github_api(url)
-    if resp and resp.status_code == 200:
-        issues = resp.json()
-        text = "OPEN ISSUES LIST:\n"
-        for i in issues:
-            if 'pull_request' in i: continue # Skip PRs
-            text += f"- Issue #{i['number']}: {i['title']}\n  Labels: {[l['name'] for l in i['labels']]}\n  Body: {i['body'][:200]}...\n\n"
-        return text
-    return "No issues found or API error."
+# Reuse existing GitHub helpers (condensed)
+def get_gh_content(url):
+    try: return requests.get(url, headers={'Accept': 'application/vnd.github.v3+json'}).text
+    except: return ""
 
-def get_pr_context(owner, repo):
-    # Get latest open PR
-    url = f"https://api.github.com/repos/{owner}/{repo}/pulls?state=open&sort=updated&per_page=5"
-    resp = fetch_github_api(url)
-    if resp and resp.status_code == 200:
-        prs = resp.json()
-        if not prs: return "No open PRs found."
-        
-        # Analyze the most recently updated one
-        pr = prs[0]
-        text = f"ANALYZING PR #{pr['number']}: {pr['title']}\n"
-        text += f"Description: {pr['body']}\n"
-        
-        # Fetch diff (simplified)
-        diff_url = pr['diff_url']
-        diff_resp = requests.get(diff_url)
-        if diff_resp.status_code == 200:
-            text += f"\nDIFF PREVIEW:\n{diff_resp.text[:5000]}" # Limit diff size
-        return text
-    return "Failed to fetch PRs."
+def parse_repo_url(url):
+    clean = url.strip().removesuffix(".git").split("github.com/")
+    if len(clean) < 2: return None, None
+    parts = [x for x in clean[1].split("/") if x]
+    return (parts[0], parts[1]) if len(parts) >= 2 else (None, None)
 
-def get_release_context(owner, repo):
-    url = f"https://api.github.com/repos/{owner}/{repo}/releases?per_page=5"
-    resp = fetch_github_api(url)
-    if resp and resp.status_code == 200:
-        releases = resp.json()
-        if not releases: return "No releases found."
-        text = "RECENT RELEASES:\n"
-        for r in releases:
-            text += f"- {r['tag_name']} ({r['published_at']}): {r['body'][:300]}...\n"
-        return text
-    return "Failed to fetch releases."
+# --- Views ---
 
-# --- Agent Logic ---
-
-def get_agent_prompt(agent_type, owner, repo):
-    """
-    Constructs the prompt and fetches context based on agent type.
-    """
-    context = ""
-    readme = get_file_content(owner, repo, "README.md") or ""
+@login_required
+@require_GET
+def get_dashboard_stats(request):
+    """API for charts and history."""
+    txs = AnalysisTransaction.objects.filter(user=request.user).order_by('-created_at')
     
-    # Common HTML formatting instruction
-    fmt_instr = """
-    Format output using clean HTML tags (no markdown):
-    - <h3 class="text-xl font-bold mt-4 mb-2 text-indigo-700">Title</h3>
-    - <p class="mb-2 text-slate-700">Text</p>
-    - <ul class="list-disc pl-5 mb-4 space-y-1"><li>Item</li></ul>
-    - <code class="bg-slate-100 px-2 py-1 rounded text-red-500 font-mono text-sm">Code</code>
-    """
+    # 1. History
+    history = []
+    for t in txs:
+        history.append({
+            'type': t.category, # GITHUB / AUDIO
+            'agent': t.agent_type.replace('_', ' ').title(),
+            'input': t.title or t.input_text or t.input_file.name,
+            'cost': float(t.cost),
+            'date': t.created_at.strftime("%Y-%m-%d"),
+            'tx_hash': t.tx_hash,
+            'id': t.id
+        })
+        
+    # 2. Spending Graph (Last 7 days)
+    # Simplified aggregation
+    spending_map = {}
+    service_map = {"GitHub": 0, "Audio": 0}
+    
+    total_spent = 0.0
+    
+    for t in txs:
+        d = t.created_at.strftime("%Y-%m-%d")
+        spending_map[d] = spending_map.get(d, 0) + float(t.cost)
+        total_spent += float(t.cost)
+        
+        if t.category == 'GITHUB': service_map['GitHub'] += 1
+        else: service_map['Audio'] += 1
 
-    if agent_type == 'setup_runner':
-        context = readme[:40000]
-        return f"""
-        {fmt_instr}
-        You are a Setup Helper. Analyze the README to extract precise setup steps.
-        
-        Output Sections:
-        1. <h3>Prerequisites</h3> (node, python versions, etc)
-        2. <h3>Installation</h3> (exact install commands)
-        3. <h3>Running Locally</h3> (how to start dev server)
-        4. <h3>Common Issues</h3> (potential pitfalls)
+    return JsonResponse({
+        'history': history,
+        'spending': spending_map,
+        'services': service_map,
+        'total_spent': round(total_spent, 4)
+    })
 
-        Context: {context}
-        """
+@login_required
+@require_GET
+def get_transaction_details(request, tx_id):
+    """Fetch full details for a history item."""
+    try:
+        tx = AnalysisTransaction.objects.get(id=tx_id, user=request.user)
+        return JsonResponse({
+            'input': tx.title or tx.input_text,  # Add file url if audio ??
+            'output': json.loads(tx.output_data) if tx.output_data else {},
+            'agent': tx.agent_type,
+            'category': tx.category
+        })
+    except AnalysisTransaction.DoesNotExist:
+        return JsonResponse({'error': 'Not found'}, status=404)
 
-    elif agent_type == 'architecture':
-        # Simulating file tree for now using File Content or just README structure
-        # A real recursive tree fetch is heavy. Let's rely on README description of architecture first.
-        # If possible, we'd fetch the root file list.
-        context = readme[:40000]
-        return f"""
-        {fmt_instr}
-        You are a Senior Architect. Analyze the project structure and logic based on the documentation.
-        
-        Output Sections:
-        1. <h3>High Level Architecture</h3>
-        2. <h3>Key Modules & Responsibilities</h3>
-        3. <h3>Tech Stack & Data Flow</h3>
-        
-        Context (README): {context}
-        """
-
-    elif agent_type == 'contributing':
-        contributing = get_file_content(owner, repo, "CONTRIBUTING.md") or ""
-        context = (contributing + "\n\n" + readme)[:40000]
-        return f"""
-        {fmt_instr}
-        You are a Community Manager. Explain how a new developer can contribute.
-        
-        Output Sections:
-        1. <h3>Getting Started</h3>
-        2. <h3>Environment Setup</h3>
-        3. <h3>Pull Request Guildelines</h3>
-        4. <h3>Testing Standards</h3>
-        
-        Context: {context}
-        """
-
-    elif agent_type == 'issues':
-        context = get_issue_context(owner, repo)
-        return f"""
-        {fmt_instr}
-        You are an Issue Triage Manager. Group and classify these open issues.
-        
-        Output Sections:
-        1. <h3>Good First Issues</h3> (Beginner friendly)
-        2. <h3>Critical Bugs</h3> (Urgent)
-        3. <h3>Feature Requests</h3>
-        
-        Context: {context}
-        """
-
-    elif agent_type == 'pr_review':
-        context = get_pr_context(owner, repo)
-        return f"""
-        {fmt_instr}
-        You are a Senior Code Reviewer. Review the LATEST Open PR.
-        
-        Output Sections:
-        1. <h3>PR Summary</h3> (What is changing?)
-        2. <h3>Code Quality Assessment</h3>
-        3. <h3>Potential Risks/Bugs</h3>
-        4. <h3>Verdict</h3> (Approve/Request Changes)
-        
-        Context: {context}
-        """
-
-    elif agent_type == 'release_notes':
-        context = get_release_context(owner, repo)
-        return f"""
-        {fmt_instr}
-        You are a Release Manager. Summarize the recent changes.
-        
-        Output Sections:
-        1. <h3>Latest Version</h3>
-        2. <h3>Key Features Added</h3>
-        3. <h3>Breaking Changes</h3> (If any)
-        
-        Context: {context}
-        """
-        
-    elif agent_type == 'dependencies':
-        pkg_json = get_file_content(owner, repo, "package.json") or ""
-        req_txt = get_file_content(owner, repo, "requirements.txt") or ""
-        go_mod = get_file_content(owner, repo, "go.mod") or ""
-        context = f"Package.json:\n{pkg_json}\n\nRequirements.txt:\n{req_txt}\n\nGo.mod:\n{go_mod}"
-        return f"""
-        {fmt_instr}
-        You are a Security Auditor. Analyze the dependencies.
-        
-        Output Sections:
-        1. <h3>Main Dependencies</h3>
-        2. <h3>Outdated/Risky Signals</h3> (Based on common knowledge)
-        3. <h3>Security Recommendations</h3>
-        
-        Context: {context[:40000]}
-        """
-        
-    elif agent_type == 'license':
-        lic = get_file_content(owner, repo, "LICENSE") or get_file_content(owner, repo, "LICENSE.md") or ""
-        return f"""
-        {fmt_instr}
-        You are a Legal Advisor. Analyze the license.
-        
-        Output Sections:
-        1. <h3>License Type</h3>
-        2. <h3>Key Permissions</h3> (Commercial use, modification, etc)
-        3. <h3>Limitations & Conditions</h3>
-        
-        Context: {lic[:20000]}
-        """
-
-    # Default fallback (summary)
-    else:
-        context = readme[:40000]
-        return f"""
-        {fmt_instr}
-        You are an expert developer. Summarize this repo.
-        Include: Overview, Tech Stack, Key Features, Usage.
-        Context: {context}
-        """
-
-# --- Main Logic ---
 
 @login_required
 @require_POST
-def summarize_repo(request):
+def run_github_agent(request):
+    print(f"[{timezone.now()}] USER: {request.user.wallet_address} - Requesting GITHUB Agent")
     try:
         data = json.loads(request.body)
         repo_url = data.get('repo_url')
         tx_hash = data.get('tx_hash')
-        agent_type = data.get('agent_type', 'summary') # Default to summary
-        
-        if not repo_url:
-            return JsonResponse({'error': 'Repository URL is required'}, status=400)
-            
-        if not tx_hash:
-            return JsonResponse({'error': 'Payment required. Please pay 0.001 ETH.'}, status=402)
+        agent_type = data.get('agent_type', 'summary')
 
-        # 0. Verify Sepolia Payment (with Retries)
-        max_retries = 10
-        tx = None
-        receipt = None
-        
-        for attempt in range(max_retries):
-            try:
-                tx = w3.eth.get_transaction(tx_hash)
-                receipt = w3.eth.get_transaction_receipt(tx_hash)
-                if tx and receipt:
-                    break
-            except Exception:
-                pass
-            time.sleep(2) 
-            
-        if not tx:
-             return JsonResponse({'error': 'Transaction not found on chain yet. Please wait.'}, status=400)
-        
-        if not receipt:
-             return JsonResponse({'error': 'Transaction pending. Please wait for confirmation.'}, status=400)
+        print(f" > Repo: {repo_url} | Type: {agent_type} | Tx: {tx_hash}")
 
+        # 1. Verify Payment
+        print(" > Verifying Payment...")
+        if err := verify_payment(tx_hash):
+            print(f" ! Payment Failed: {err}")
+            return JsonResponse({'error': err}, status=400)
+        print(" > Payment Verified.")
+
+        # 2. Logic
+        owner, repo = parse_repo_url(repo_url)
+        if not owner: return JsonResponse({'error': 'Invalid URL'}, status=400)
+        
+        # Apply Patch for Requests
+        print(" > Fetching GitHub Content...")
+        socket.getaddrinfo = new_getaddrinfo
         try:
-            if receipt['status'] != 1: return JsonResponse({'error': 'Transaction failed.'}, status=400)
-            if tx['to'].lower() != PAYMENT_RECIPIENT.lower(): return JsonResponse({'error': 'Invalid recipient.'}, status=400)
-            value_eth = float(w3.from_wei(tx['value'], 'ether'))
-            if value_eth < 0.00099: 
-                 return JsonResponse({'error': f'Insufficient ETH. Sent {value_eth}, need 0.001'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': f'Validation failed: {str(e)}'}, status=400)
-
-        # 1. Parse URL/Fetch Context for Agent
-        owner, repo, err = parse_repo_url(repo_url)
-        if err: return JsonResponse({'error': err}, status=400)
-
-        # 2. Get Prompt
-        prompt = get_agent_prompt(agent_type, owner, repo)
-
-        # 3. Call Gemini
-        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+            readme_url = f"https://raw.githubusercontent.com/{owner}/{repo}/HEAD/README.md"
+            readme = get_gh_content(readme_url)
+            print(f" > Content Fetched ({len(readme)} bytes). Sending to Gemini...")
+            
+            prompt = f"Analyze this GitHub repo ({agent_type}). README: {readme[:20000]}. Return JSON with key 'summary' containing HTML."
+    
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
+            resp = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
+            print(" > Gemini Response Received.")
+        finally:
+            socket.getaddrinfo = original_getaddrinfo
+        
+        # 3. Save to DB
         try:
-             response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
-             return JsonResponse({'summary': response.text})
-        except Exception:
-             # Fallback
-             response = client.models.generate_content(model='gemini-2.5-pro', contents=prompt)
-             return JsonResponse({'summary': response.text})
+            clean = resp.text.replace("```json", "").replace("```", "")
+            output_json = json.loads(clean)
+        except:
+            output_json = {"summary": resp.text}
+
+        print(" > Saving to DB...")
+        AnalysisTransaction.objects.create(
+            user=request.user,
+            category='GITHUB',
+            agent_type=agent_type,
+            input_text=repo_url,
+            title=f"{owner}/{repo}",
+            output_data=json.dumps(output_json),
+            tx_hash=tx_hash,
+            input_file=None
+        )
+        print(" > Done. Returning Response.")
+
+        return JsonResponse(output_json)
 
     except Exception as e:
-        print(f"Server Error: {e}")
-        return JsonResponse({'error': f'Internal Error: {str(e)}'}, status=500)
+        print(f" ! ERROR GITHUB: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def run_audio_agent(request):
+    print(f"[{timezone.now()}] USER: {request.user.wallet_address} - Requesting AUDIO Agent")
+    try:
+        # FormData input
+        audio_file = request.FILES.get('audio_file')
+        tx_hash = request.POST.get('tx_hash')
+        
+        print(f" > File: {audio_file.name if audio_file else 'None'} | Tx: {tx_hash}")
+
+        if not audio_file or not tx_hash:
+             return JsonResponse({'error': 'Missing file or Payment'}, status=400)
+
+        # 1. Verify Payment
+        print(" > Verifying Payment...")
+        if err := verify_payment(tx_hash):
+             print(f" ! Payment Failed: {err}")
+             return JsonResponse({'error': err}, status=400)
+        print(" > Payment Verified.")
+             
+        # 2. Transcribe (ElevenLabs)
+        if "YOUR-ELEVENLABS" in settings.ELEVENLABS_API_KEY:
+             return JsonResponse({'error': 'Server configuration error: ElevenLabs API Key missing.'}, status=503)
+             
+        # Save temp file
+        print(" > Saving Audio File to DB/Disk...")
+        txn = AnalysisTransaction.objects.create(
+            user=request.user,
+            category='AUDIO',
+            agent_type='meeting_assistant',
+            input_file=audio_file,
+            title=audio_file.name,
+            tx_hash=tx_hash
+        )
+        
+        f_path = txn.input_file.path
+        
+        # Apply Patch for Requests
+        socket.getaddrinfo = new_getaddrinfo
+        try:
+            print(" > Calling ElevenLabs S2T API...")
+            el_url = "https://api.elevenlabs.io/v1/speech-to-text"
+            with open(f_path, 'rb') as f:
+                r = requests.post(
+                    el_url, 
+                    headers={"xi-api-key": settings.ELEVENLABS_API_KEY}, 
+                    files={'file': f, 'model_id': (None, 'scribe_v1'), 'diarize': (None, 'true')}
+                )
+            
+            if r.status_code != 200:
+                 print(f" ! ElevenLabs Error: {r.text}")
+                 return JsonResponse({'error': 'Transcription Failed'}, status=500)
+            
+            transcript_json = r.json() 
+            utterances = transcript_json.get('utterances', [])
+            full_text = " ".join([u['text'] for u in utterances]) if utterances else transcript_json.get('text', '')
+            print(f" > Transcription Complete. {len(utterances)} Segments found.")
+    
+            # 3. Analyze (Gemini)
+            print(" > Sending Transcript to Gemini...")
+            prompt =f"""
+            Analyze this transcript. Return strict JSON.
+            Keys:
+            - "summary": HTML string (concise).
+            - "minutes": HTML string (bullet points of discussion).
+            - "todos": HTML string (list of actionable items from the user).
+            - "deadlines": HTML string (list of dates/times mentioned).
+            
+            Transcript: {full_text[:40000]}
+            """
+            
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
+            resp = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
+        finally:
+            socket.getaddrinfo = original_getaddrinfo
+        
+        print(" > Gemini Analysis Complete. Parsing JSON...")
+        try:
+            clean = resp.text.replace("```json", "").replace("```", "")
+            final_data = json.loads(clean)
+        except:
+            final_data = {"summary": resp.text, "minutes": "", "todos": "", "deadlines": ""}
+            
+        final_data['transcript'] = full_text # string fallback
+        final_data['utterances'] = utterances # full speaker structure
+        
+        # Update DB
+        print(" > Updating DB with Results...")
+        txn.output_data = json.dumps(final_data)
+        txn.save()
+
+        return JsonResponse(final_data)
+
+    except Exception as e:
+        print(f" ! AUDIO ERROR: {e}")
+        return JsonResponse({'error': str(e)}, status=500)

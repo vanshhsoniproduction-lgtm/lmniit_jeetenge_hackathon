@@ -130,7 +130,12 @@ AUTH_USER_MODEL = 'wallet.WalletUser'
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
+# Media Files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # 5. Login Redirect
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
-GEMINI_API_KEY = "AIzaSyAQHk_5I1ohRqbNPffMVsl7OSyPdiEGR7A"
+GEMINI_API_KEY = "xxx"
+ELEVENLABS_API_KEY = "xxx"
