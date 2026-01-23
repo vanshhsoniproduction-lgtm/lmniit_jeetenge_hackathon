@@ -1,0 +1,240 @@
+{% extends 'payment/base.html' %}
+
+{% block title %}Pay Now | PayLink{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto pt-10 animate-fade-in">
+    <div class="glass-panel rounded-2xl p-8 border border-white/10 shadow-2xl relative overflow-hidden">
+        
+        <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-[60px] -z-10 pointer-events-none"></div>
+
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-white mb-2">Complete Payment</h1>
+            <p class="text-slate-400 text-sm">Send MON via MetaMask on Monad Testnet.</p>
+        </div>
+
+        <!-- Payment Details Card -->
+        <div class="bg-black/40 rounded-xl p-6 border border-white/5 mb-6">
+            <div class="flex justify-between items-center mb-4 pb-4 border-b border-white/5">
+                <span class="text-slate-500 text-sm">Amount</span>
+                <span class="text-2xl font-mono font-bold text-white">{{ amount }} <span class="text-indigo-400">MON</span></span>
+            </div>
+            
+            {% if note %}
+            <div class="mb-4 pb-4 border-b border-white/5">
+                <span class="text-slate-500 text-xs uppercase block mb-1">Note</span>
+                <span class="text-slate-300 text-sm italic">"{{ note }}"</span>
+            </div>
+            {% endif %}
+
+            <div class="mb-2">
+                <span class="text-slate-500 text-xs uppercase block mb-1">To Receiver</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-slate-300 text-xs font-mono truncate w-full bg-white/5 p-2 rounded">{{ receiver_wallet }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Area -->
+        <div id="wallet-section" class="space-y-4">
+            <button id="connectBtn" onclick="connectWallet()" class="w-full btn-primary py-4 rounded-xl text-white font-bold text-lg shadow-lg">
+                Connect Wallet
+            </button>
+            
+            <div id="pay-controls" class="hidden space-y-4">
+                <div class="flex items-center justify-between text-xs text-slate-400 px-2">
+                    <span>Connected: <span id="userAddress" class="text-indigo-300 font-mono">...</span></span>
+                    <span id="networkStatus" class="flex items-center gap-1 text-red-400">
+                        <span class="w-2 h-2 rounded-full bg-red-400"></span> Wrong Net
+                    </span>
+                </div>
+
+                <button id="payBtn" onclick="processPayment()" disabled class="w-full bg-slate-700 text-slate-400 py-4 rounded-xl font-bold text-lg cursor-not-allowed transition">
+                    Pay {{ amount }} MON
+                </button>
+            </div>
+        </div>
+
+        <!-- Status / Error -->
+        <div id="statusMsg" class="mt-4 text-center text-sm font-medium hidden"></div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const MONAD_CHAIN_ID = '0xaa36a7'; // 11155111 in Hex (Sepolia)
+    const MONAD_CHAIN_NAME = 'Sepolia Testnet';
+    const MONAD_RPC = 'https://rpc.sepolia.org';
+    const EXPECTED_AMOUNT = "{{ amount }}";
+    const RECEIVER = "{{ receiver_wallet }}";
+    const REQUEST_ID = "{{ request_id|default:'None' }}"; // 'None' string if empty
+    
+    let provider, signer, userAddr;
+
+    async function connectWallet() {
+        if (!window.ethereum) {
+            showStatus("MetaMask not found. Please install it.", "text-red-400");
+            return;
+        }
+        
+        try {
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            signer = provider.getSigner();
+            userAddr = await signer.getAddress();
+            
+            document.getElementById('connectBtn').classList.add('hidden');
+            document.getElementById('pay-controls').classList.remove('hidden');
+            document.getElementById('userAddress').innerText = userAddr.substring(0,6) + '...' + userAddr.substring(38);
+            
+            checkNetwork();
+            
+            // Listen for chain changes
+            window.ethereum.on('chainChanged', handleChainChanged);
+            
+        } catch (err) {
+            console.error(err);
+            showStatus("Connection failed: " + err.message, "text-red-400");
+        }
+    }
+
+    async function handleChainChanged(_chainId) {
+        window.location.reload();
+    }
+
+    async function checkNetwork() {
+        const { chainId } = await provider.getNetwork();
+        const statusEl = document.getElementById('networkStatus');
+        const payBtn = document.getElementById('payBtn');
+        
+        if (chainId === 11155111) { // Sepolia Chain ID
+            statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.8)]"></span> Sepolia';
+            statusEl.className = "flex items-center gap-1 text-blue-400";
+            
+            payBtn.disabled = false;
+            payBtn.classList.remove('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
+            payBtn.classList.add('btn-primary', 'shadow-lg'); // Use primary style
+        } else {
+            statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500"></span> Wrong Net';
+            statusEl.className = "flex items-center gap-1 text-red-400";
+            
+            payBtn.innerText = "Switch to Sepolia";
+            payBtn.disabled = false;
+            payBtn.onclick = switchNetwork; // Change action
+            payBtn.classList.remove('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
+            payBtn.classList.add('bg-slate-600', 'text-white', 'hover:bg-slate-500');
+        }
+    }
+
+    async function switchNetwork() {
+        try {
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: MONAD_CHAIN_ID }],
+            });
+            // checkNetwork called by reload or manual
+            setTimeout(checkNetwork, 1000); 
+        } catch (switchError) {
+            // This error code indicates that the chain has not been added to MetaMask.
+            if (switchError.code === 4902) {
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [
+                            {
+                                chainId: MONAD_CHAIN_ID,
+                                chainName: MONAD_CHAIN_NAME,
+                                rpcUrls: [MONAD_RPC],
+                                nativeCurrency: {
+                                    name: "Sepolia ETH",
+                                    symbol: "ETH", 
+                                    decimals: 18
+                                },
+                                blockExplorerUrls: ["https://sepolia.etherscan.io/"]
+                            },
+                        ],
+                    });
+                } catch (addError) {
+                    showStatus("Failed to add network: " + addError.message, "text-red-400");
+                }
+            } else {
+                showStatus("Failed to switch: " + switchError.message, "text-red-400");
+            }
+        }
+    }
+
+    async function processPayment() {
+        // Reset onclick to this function if it was switched
+        if(document.getElementById('payBtn').innerText.includes("Switch")) return switchNetwork();
+
+        const btn = document.getElementById('payBtn');
+        btn.disabled = true;
+        btn.innerText = "Sending...";
+        showStatus("Confirm transaction in MetaMask...", "text-indigo-400");
+
+        try {
+            const tx = await signer.sendTransaction({
+                to: RECEIVER,
+                value: ethers.utils.parseEther(EXPECTED_AMOUNT)
+            });
+
+            showStatus("Transaction Sent! Verifying...", "text-yellow-400 animate-pulse");
+            console.log("Tx Hash:", tx.hash);
+
+            // Wait for receipt on client side potentially, but let's send to backend immediately to verify
+            // Or backend verifies. The backend code verifies status.
+            // Let's wait for client confirmation first to avoid race? 
+            // Better UX: Send hash to backend, backend waits/verifies.
+            
+            await verifyTransaction(tx.hash);
+
+        } catch (err) {
+            console.error(err);
+            btn.disabled = false;
+            btn.innerText = "Pay " + EXPECTED_AMOUNT + " ETH";
+            showStatus(err.message.includes("user rejected") ? "Transaction rejected." : "Error: " + err.message, "text-red-400");
+        }
+    }
+
+    async function verifyTransaction(txHash) {
+        try {
+            const response = await fetch("{% url 'verify_transaction' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({
+                    tx_hash: txHash,
+                    request_id: REQUEST_ID
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showStatus("Payment Successful! Redirecting...", "text-emerald-400");
+                setTimeout(() => {
+                    window.location.href = "/paylink/receipt/" + txHash + "/";
+                }, 1000);
+            } else {
+                showStatus("Verification Failed: " + data.error, "text-red-400");
+                document.getElementById('payBtn').innerText = "Retry Verification";
+                document.getElementById('payBtn').disabled = false;
+                document.getElementById('payBtn').onclick = () => verifyTransaction(txHash);
+            }
+
+        } catch (err) {
+            showStatus("Network Error verifying tx.", "text-red-400");
+        }
+    }
+
+    function showStatus(msg, classes) {
+        const el = document.getElementById('statusMsg');
+        el.innerText = msg;
+        el.className = "mt-4 text-center text-sm font-medium block " + classes;
+    }
+</script>
+{% endblock %}

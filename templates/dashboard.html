@@ -3,51 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Web3 AI</title>
+    <title>Dashboard | Web3.AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
-        .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 0.8); }
-        .nav-item.active { background-color: #EEF2FF; color: #4F46E5; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #050505; 
+            background-image: linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: #E2E8F0;
+        }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(20, 20, 25, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .nav-item.active { 
+            background: linear-gradient(90deg, rgba(79, 70, 229, 0.2) 0%, rgba(79, 70, 229, 0) 100%);
+            border-left: 3px solid #6366f1;
+            color: #818cf8; 
+        }
+        
         .hide-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* Glow Effects */
+        .glow-hover:hover {
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+
+        .chat-bubble {
+            position: relative;
+            z-index: 10;
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
     </style>
 </head>
-<body class="text-slate-800 h-screen flex overflow-hidden">
+<body class="h-screen flex overflow-hidden">
 
     <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between hidden md:flex z-10">
+    <aside class="w-64 glass-panel border-r-0 border-white/10 flex flex-col justify-between hidden md:flex z-50 transition-all duration-300 relative" id="sidebar">
         <div class="p-6">
-            <div class="flex items-center gap-3 mb-10">
-                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">W</div>
-                <span class="text-xl font-bold tracking-tight">Web3 AI</span>
+            <div class="flex items-center gap-3 mb-10 pl-2">
+                 <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">AI</div>
+                <span class="text-xl font-bold tracking-tight text-white">Web3.AI</span>
             </div>
 
-            <nav class="space-y-1">
-                <button onclick="switchView('home')" id="nav-home" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition active">
+            <nav class="space-y-2">
+                <button onclick="switchView('home')" id="nav-home" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition active">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
                     New Analysis
                 </button>
-                <button onclick="switchView('history')" id="nav-history" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
+                <button onclick="switchView('history')" id="nav-history" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     History & Analytics
                 </button>
-                <button onclick="window.location.href='/logout/'" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition mt-8">
+                <button onclick="window.location.href='{% url 'profile' %}'" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    PayLink Agent
+                </button>
+                <button onclick="window.location.href='/logout/'" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-500/10 transition mt-8 rounded-lg">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     Logout
                 </button>
             </nav>
         </div>
         
-        <div class="p-6 border-t border-slate-100">
-            <div class="bg-indigo-50 rounded-xl p-4">
-                <p class="text-xs font-semibold text-indigo-900 uppercase mb-1">Wallet</p>
-                <p class="text-xs text-indigo-700 break-all font-mono mb-2">{{ user.wallet_address }}</p>
+        <div class="p-6 border-t border-white/5 bg-black/20">
+            <div class="rounded-xl p-3 border border-white/10 bg-black/40">
+                <p class="text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-widest">Active Wallet</p>
+                <p class="text-xs text-indigo-400 break-all font-mono mb-2 truncate">{{ user.wallet_address }}</p>
                 <div class="flex items-center justify-between">
-                    <span id="balanceDisplay" class="text-sm font-bold text-indigo-700">-- ETH</span>
-                    <div class="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+                    <span id="balanceDisplay" class="text-sm font-bold text-white">-- ETH</span>
+                    <div class="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
                 </div>
             </div>
         </div>
@@ -56,64 +94,90 @@
     <!-- Main Content -->
     <main class="flex-1 flex flex-col h-full overflow-hidden relative">
         
-        <!-- Header Mobile -->
-        <header class="md:hidden bg-white border-b border-slate-200 p-4 flex justify-between items-center">
-             <span class="text-xl font-bold">Web3 AI</span>
-             <button onclick="document.querySelector('aside').classList.toggle('hidden')" class="p-2 text-slate-600">
+        <!-- Toggle & Header Mobile -->
+        <header class="flex justify-between items-center p-4 md:p-6 sticky top-0 md:hidden z-20 glass-panel border-x-0 border-t-0">
+             <span class="text-lg font-bold text-white">Web3.AI</span>
+             <button onclick="document.querySelector('aside').classList.toggle('hidden')" class="p-2 text-slate-400">
                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
              </button>
         </header>
 
         <!-- Content Views -->
-        <div id="content-area" class="flex-1 overflow-y-auto p-8 relative scroll-smooth">
+        <div id="content-area" class="flex-1 overflow-y-auto p-4 md:p-10 relative scroll-smooth">
             
             <!-- VIEW: HOME (Agent Selection) -->
-            <div id="view-home" class="max-w-5xl mx-auto animate-fade-in">
-                <header class="mb-12 text-center">
-                    <h1 class="text-4xl font-bold text-slate-900 mb-4 tracking-tight">Select Intelligence type</h1>
-                    <p class="text-lg text-slate-500 max-w-2xl mx-auto">Choose a specialized AI agent to process your data. Secure payments via Sepolia ETH.</p>
+            <div id="view-home" class="max-w-6xl mx-auto animate-fade-in pt-10">
+                <header class="mb-12">
+                    <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">Select Intelligence <span class="text-indigo-500">Node</span></h1>
+                    <p class="text-slate-400 max-w-2xl text-lg">Deploy autonomous agents to analyze your codebase or meetings. <br/>Powered by verifiable compute.</p>
                 </header>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     
                     <!-- GitHub Card -->
-                    <div onclick="openGithubForm()" class="group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-200 cursor-pointer transition-all duration-300 relative overflow-hidden">
-                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition">
-                            <svg class="w-32 h-32 text-indigo-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-                        </div>
+                    <div onclick="openGithubForm()" class="group glass-panel p-8 rounded-3xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:border-indigo-500/50 relative overflow-hidden">
+                         <div class="absolute -right-10 -top-10 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl group-hover:bg-indigo-600/30 transition"></div>
+                        
                         <div class="relative z-10">
-                            <div class="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center text-3xl mb-6">🐙</div>
-                            <h3 class="text-2xl font-bold text-slate-900 mb-2 group-hover:text-indigo-600 transition">GitHub Agent</h3>
-                            <p class="text-slate-500 mb-6 font-medium">Deep analysis of repositories, PRs, and Issues.</p>
-                            <ul class="space-y-2 text-sm text-slate-400 mb-8">
-                                <li class="flex items-center gap-2">✓ Repo Summarizer</li>
-                                <li class="flex items-center gap-2">✓ Architecture Map</li>
-                                <li class="flex items-center gap-2">✓ PR Reviewer</li>
-                            </ul>
-                            <div class="flex items-center justify-between mt-auto">
-                                <span class="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">0.001 ETH</span>
-                                <span class="text-indigo-600 font-semibold group-hover:translate-x-1 transition flex items-center gap-1">Select <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg></span>
+                            <div class="flex justify-between items-start mb-8">
+                                <div class="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center border border-indigo-500/20 text-3xl">
+                                    <svg class="w-8 h-8 text-indigo-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                                </div>
+                                <span class="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-mono border border-indigo-500/20">v3.4.1</span>
+                            </div>
+                            
+                            <h3 class="text-2xl font-bold text-white mb-2 group-hover:text-indigo-400 transition">GitHub Architect</h3>
+                            <p class="text-slate-400 mb-8 font-medium">Deep analysis of codebases, PR audits, and issue triaging.</p>
+                            
+                            <div class="grid grid-cols-2 gap-3 mb-8">
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Repo Summarization</div>
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Code Architecture</div>
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">PR Review</div>
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Security Audit</div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between border-t border-white/10 pt-6">
+                                <div class="flex flex-col">
+                                    <span class="text-xs text-slate-500 uppercase font-bold">Est Cost</span>
+                                    <span class="text-emerald-400 font-mono">0.0004 - 0.0009 ETH</span>
+                                </div>
+                                <button class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center group-hover:rotate-45 transition">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                </button>
                             </div>
                         </div>
                     </div>
 
                     <!-- Audio Card -->
-                    <div onclick="openAudioForm()" class="group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-violet-200 cursor-pointer transition-all duration-300 relative overflow-hidden">
-                         <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition">
-                            <svg class="w-32 h-32 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                        </div>
+                    <div onclick="openAudioForm()" class="group glass-panel p-8 rounded-3xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:border-purple-500/50 relative overflow-hidden">
+                         <div class="absolute -right-10 -top-10 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl group-hover:bg-purple-600/30 transition"></div>
+                        
                         <div class="relative z-10">
-                            <div class="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center text-3xl mb-6">🎙️</div>
-                            <h3 class="text-2xl font-bold text-slate-900 mb-2 group-hover:text-violet-600 transition">Audio Analyst</h3>
-                            <p class="text-slate-500 mb-6 font-medium">Transcribe & Extract Action Items from records.</p>
-                            <ul class="space-y-2 text-sm text-slate-400 mb-8">
-                                <li class="flex items-center gap-2">✓ High-Accuracy Transcription</li>
-                                <li class="flex items-center gap-2">✓ Minutes of Meeting</li>
-                                <li class="flex items-center gap-2">✓ Deadline Extraction</li>
-                            </ul>
-                            <div class="flex items-center justify-between mt-auto">
-                                <span class="bg-violet-50 text-violet-700 px-3 py-1 rounded-full text-xs font-bold">0.001 ETH</span>
-                                <span class="text-violet-600 font-semibold group-hover:translate-x-1 transition flex items-center gap-1">Select <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg></span>
+                             <div class="flex justify-between items-start mb-8">
+                                <div class="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-500/20 text-3xl">
+                                    <svg class="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                                </div>
+                                <span class="px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 text-xs font-mono border border-purple-500/20">v1.0.2</span>
+                            </div>
+                            
+                            <h3 class="text-2xl font-bold text-white mb-2 group-hover:text-purple-400 transition">Voice Intelligence</h3>
+                            <p class="text-slate-400 mb-8 font-medium">Extract meeting minutes, action items, and detect speakers.</p>
+                             
+                            <div class="grid grid-cols-2 gap-3 mb-8">
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Speaker Diarization</div>
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Smart Summary</div>
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Deadline Detection</div>
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">To-Do Extraction</div>
+                            </div>
+                            
+                             <div class="flex items-center justify-between border-t border-white/10 pt-6">
+                                <div class="flex flex-col">
+                                    <span class="text-xs text-slate-500 uppercase font-bold">Fixed Cost</span>
+                                    <span class="text-purple-400 font-mono">0.0011 ETH</span>
+                                </div>
+                                <button class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center group-hover:rotate-45 transition">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -122,130 +186,135 @@
             </div>
 
             <!-- VIEW: GITHUB FORM -->
-            <div id="view-github" class="max-w-3xl mx-auto hidden animate-fade-in py-10">
-                <button onclick="switchView('home')" class="mb-6 flex items-center gap-2 text-slate-400 hover:text-slate-600 transition text-sm">
-                    ← Back to selection
+            <div id="view-github" class="max-w-3xl mx-auto hidden animate-fade-in py-20">
+                <button onclick="switchView('home')" class="mb-8 flex items-center gap-2 text-slate-500 hover:text-white transition text-sm font-mono">
+                    ← // BACK_TO_ROOT
                 </button>
                 
-                <h2 class="text-3xl font-bold text-slate-900 mb-8 flex items-center gap-3">
-                    <span class="text-indigo-600 text-4xl">🐙</span> GitHub Analysis
-                </h2>
+                <div class="glass-panel p-10 rounded-3xl border border-white/10">
+                    <h2 class="text-3xl font-bold text-white mb-8 flex items-center gap-4">
+                        <span class="text-indigo-500">GITHUB_AGENT</span> // CONFIG
+                    </h2>
 
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Repository URL</label>
-                    <input type="text" id="repoUrlInput" placeholder="https://github.com/owner/repo" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 mb-6 outline-none transition">
-
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Analysis Type</label>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-                        <button onclick="selectGhType(this, 'summary')" class="gh-type-btn active px-4 py-3 rounded-xl border border-indigo-500 bg-indigo-50 text-indigo-700 text-sm font-bold text-center transition">Summarizer</button>
-                        <button onclick="selectGhType(this, 'architecture')" class="gh-type-btn px-4 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-medium text-center transition">Architecture</button>
-                        <button onclick="selectGhType(this, 'issues')" class="gh-type-btn px-4 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-medium text-center transition">Issues</button>
-                        <button onclick="selectGhType(this, 'pr_review')" class="gh-type-btn px-4 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-medium text-center transition">PR Review</button>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Target Repository</label>
+                    <div class="relative group mb-8">
+                        <div class="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl blur opacity-20 group-hover:opacity-60 transition duration-500"></div>
+                        <input type="text" id="repoUrlInput" placeholder="https://github.com/owner/repo" class="relative w-full px-6 py-4 bg-black border border-white/10 rounded-xl focus:outline-none text-white font-mono placeholder-slate-700">
                     </div>
 
-                    <button id="btn-run-github" onclick="runGithubAgent()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg hover:shadow-indigo-500/30 transition flex items-center justify-center gap-2">
-                        <span>Pay 0.001 ETH & Run</span>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Analysis Module</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+                        <button onclick="selectGhType(this, 'summary')" class="gh-type-btn active px-4 py-4 rounded-xl border border-indigo-500/50 bg-indigo-500/10 text-indigo-300 text-sm font-bold text-center transition hover:bg-indigo-500/20">Summarizer</button>
+                        <button onclick="selectGhType(this, 'architecture')" class="gh-type-btn px-4 py-4 rounded-xl border border-white/10 bg-white/5 text-slate-400 text-sm font-medium text-center transition hover:bg-white/10">Architecture</button>
+                        <button onclick="selectGhType(this, 'issues')" class="gh-type-btn px-4 py-4 rounded-xl border border-white/10 bg-white/5 text-slate-400 text-sm font-medium text-center transition hover:bg-white/10">Issues</button>
+                        <button onclick="selectGhType(this, 'pr_review')" class="gh-type-btn px-4 py-4 rounded-xl border border-white/10 bg-white/5 text-slate-400 text-sm font-medium text-center transition hover:bg-white/10">PR Review</button>
+                    </div>
+
+                    <button id="btn-run-github" onclick="runGithubAgent()" class="w-full py-4 bg-white text-black font-bold rounded-xl shadow-lg hover:shadow-indigo-500/50 hover:scale-[1.01] transition flex items-center justify-center gap-2">
+                        <span>Execute Contract</span>
+                        <span class="bg-black/10 px-2 py-0.5 rounded text-xs font-mono">~0.0005 ETH</span>
                     </button>
                 </div>
             </div>
 
             <!-- VIEW: AUDIO FORM -->
-            <div id="view-audio" class="max-w-3xl mx-auto hidden animate-fade-in py-10">
-                <button onclick="switchView('home')" class="mb-6 flex items-center gap-2 text-slate-400 hover:text-slate-600 transition text-sm">
-                    ← Back to selection
+            <div id="view-audio" class="max-w-3xl mx-auto hidden animate-fade-in py-20">
+                <button onclick="switchView('home')" class="mb-8 flex items-center gap-2 text-slate-500 hover:text-white transition text-sm font-mono">
+                    ← // BACK_TO_ROOT
                 </button>
                 
-                <h2 class="text-3xl font-bold text-slate-900 mb-8 flex items-center gap-3">
-                    <span class="text-violet-600 text-4xl">🎙️</span> Audio Intelligence
-                </h2>
+                <div class="glass-panel p-10 rounded-3xl border border-white/10">
+                    <h2 class="text-3xl font-bold text-white mb-8 flex items-center gap-4">
+                        <span class="text-purple-500">VOICE_INTELLIGENCE</span> // UPLOAD
+                    </h2>
 
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-                    <div id="drop-zone" class="border-2 border-dashed border-slate-300 rounded-2xl p-10 text-center hover:bg-slate-50 transition cursor-pointer mb-6">
+                    <div id="drop-zone" class="border-2 border-dashed border-white/10 rounded-2xl p-16 text-center hover:bg-white/5 transition cursor-pointer mb-8 relative group">
                         <input type="file" id="audioFileInput" class="hidden" accept="audio/*">
-                        <div class="w-16 h-16 bg-violet-100 text-violet-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">☁️</div>
-                        <h4 class="text-lg font-bold text-slate-800 mb-1">Click to upload audio</h4>
-                        <p class="text-sm text-slate-500">MP3, WAV, M4A up to 25MB</p>
-                        <p id="file-name-display" class="mt-4 text-violet-600 font-bold hidden"></p>
+                        <div class="w-20 h-20 bg-purple-500/10 text-purple-400 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl group-hover:scale-110 transition border border-purple-500/20">🎙️</div>
+                        <h4 class="text-xl font-bold text-white mb-2">Drop Audio File Here</h4>
+                        <p class="text-sm text-slate-500 font-mono">.MP3, .WAV (Max 25MB)</p>
+                        <p id="file-name-display" class="mt-6 text-purple-400 font-mono font-bold hidden bg-purple-500/10 inline-block px-4 py-2 rounded"></p>
                     </div>
 
-                    <button id="btn-run-audio" onclick="runAudioAgent()" class="w-full py-4 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl shadow-lg hover:shadow-violet-500/30 transition flex items-center justify-center gap-2 disabled:bg-slate-300 disabled:cursor-not-allowed" disabled>
-                        <span>Pay 0.001 ETH & Transcribe</span>
+                    <button id="btn-run-audio" onclick="runAudioAgent()" class="w-full py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:shadow-purple-500/40 hover:scale-[1.01] transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <span>Transcribe & Analyze</span>
+                         <span class="bg-black/20 px-2 py-0.5 rounded text-xs font-mono">0.0011 ETH</span>
                     </button>
                 </div>
             </div>
 
             <!-- LOADING OVERLAY -->
-            <div id="loading-overlay" class="absolute inset-0 bg-white/90 z-50 hidden flex flex-col items-center justify-center">
-                <div class="w-24 h-24 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin mb-6"></div>
-                <h3 id="loading-text" class="text-2xl font-bold text-slate-800 animate-pulse">Processing...</h3>
-                <p id="loading-sub" class="text-slate-500 mt-2">Please wait while we interact with the blockchain & AI.</p>
+            <div id="loading-overlay" class="absolute inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center backdrop-blur-sm">
+                <div class="relative">
+                    <div class="w-24 h-24 border-4 border-indigo-500/30 rounded-full animate-spin"></div>
+                    <div class="w-24 h-24 border-4 border-t-indigo-500 rounded-full animate-spin absolute top-0 left-0"></div>
+                </div>
+                <h3 id="loading-text" class="text-2xl font-bold text-white mt-8 animate-pulse font-mono">INITIALIZING...</h3>
+                <p id="loading-sub" class="text-slate-500 mt-2 font-mono text-sm">Validating On-Chain Transaction</p>
             </div>
 
             <!-- VIEW: RESULTS -->
-            <div id="view-results" class="max-w-4xl mx-auto hidden animate-fade-in py-10">
-                 <button onclick="switchView('home')" class="mb-6 flex items-center gap-2 text-slate-400 hover:text-slate-600 transition text-sm">
-                    ← New Analysis
+            <div id="view-results" class="max-w-5xl mx-auto hidden animate-fade-in py-10">
+                 <button onclick="switchView('home')" class="mb-6 flex items-center gap-2 text-slate-500 hover:text-white transition text-sm font-mono">
+                    ← // NEW_SESSION
                 </button>
                 
-                <div class="bg-white rounded-3xl shadow-lg border border-slate-200 overflow-hidden">
-                    <div class="bg-slate-900 px-8 py-6 flex justify-between items-center text-white">
-                        <h2 class="text-xl font-bold flex items-center gap-2">
-                            <span class="text-green-400">●</span> Analysis Complete
+                <div class="glass-panel rounded-3xl border border-white/10 overflow-hidden">
+                    <div class="bg-black/40 px-8 py-4 flex justify-between items-center border-b border-white/10">
+                        <h2 class="text-lg font-bold flex items-center gap-2 text-white font-mono">
+                            <span class="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]"></span> OUTPUT_STREAM
                         </h2>
-                        <button class="bg-slate-700 hover:bg-slate-600 text-xs px-3 py-1 rounded uppercase tracking-wider">Export JSON</button>
+                        <button class="text-xs text-slate-400 hover:text-white uppercase font-bold tracking-wider">Download JSON</button>
                     </div>
-                    <div id="results-container" class="p-8 prose prose-indigo max-w-none">
+                    <div id="results-container" class="p-8 prose prose-invert max-w-none prose-p:text-slate-300 prose-headings:text-white prose-a:text-indigo-400">
                         <!-- Content injected JS -->
                     </div>
                 </div>
             </div>
 
-            <!-- VIEW: HISTORY & ANALYTICS -->
-            <div id="view-history" class="max-w-6xl mx-auto hidden animate-fade-in py-6">
-                <h2 class="text-3xl font-bold text-slate-900 mb-6">Analytics & History</h2>
+            <!-- VIEW: HISTORY -->
+            <div id="view-history" class="max-w-7xl mx-auto hidden animate-fade-in py-10">
+                <h2 class="text-3xl font-bold text-white mb-8 font-mono">LOGS_&_METRICS</h2>
                 
-                <!-- Stats Row -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                        <p class="text-sm font-medium text-slate-500 uppercase">Total Spent</p>
-                        <h3 class="text-3xl font-bold text-slate-900 mt-2" id="stat-total-spent">0.000 ETH</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                    <div class="glass-panel p-6 rounded-2xl border-l-4 border-indigo-500">
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest font-mono">Total Burn</p>
+                        <h3 class="text-3xl font-bold text-white mt-2" id="stat-total-spent">0.000 ETH</h3>
                     </div>
-                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                        <p class="text-sm font-medium text-slate-500 uppercase">Input Files</p>
-                        <h3 class="text-3xl font-bold text-slate-900 mt-2" id="stat-total-files">--</h3>
+                     <div class="glass-panel p-6 rounded-2xl border-l-4 border-purple-500">
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest font-mono">Executions</p>
+                        <h3 class="text-3xl font-bold text-white mt-2" id="stat-total-files">--</h3>
                     </div>
-                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                        <p class="text-sm font-medium text-slate-500 uppercase">Most Used Agent</p>
-                        <h3 class="text-3xl font-bold text-indigo-600 mt-2" id="stat-top-agent">--</h3>
+                     <div class="glass-panel p-6 rounded-2xl border-l-4 border-emerald-500">
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest font-mono">Top Agent</p>
+                        <h3 class="text-3xl font-bold text-emerald-400 mt-2" id="stat-top-agent">--</h3>
                     </div>
                 </div>
 
-                <!-- Charts Row -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                        <h4 class="font-bold text-slate-800 mb-6">Spending Trend (7 Days)</h4>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                    <div class="glass-panel p-6 rounded-2xl">
+                        <h4 class="font-bold text-slate-300 mb-6 font-mono text-sm">GAS_SPENDING_7D</h4>
                         <canvas id="chartSpending"></canvas>
                     </div>
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                        <h4 class="font-bold text-slate-800 mb-6">Service Distribution</h4>
+                    <div class="glass-panel p-6 rounded-2xl">
+                        <h4 class="font-bold text-slate-300 mb-6 font-mono text-sm">AGENT_DISTRIBUTION</h4>
                         <canvas id="chartServices"></canvas>
                     </div>
                 </div>
 
-                <!-- History Table -->
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="glass-panel rounded-2xl overflow-hidden">
                     <table class="w-full text-left border-collapse">
-                        <thead class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                        <thead class="bg-white/5 border-b border-white/10 text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">
                             <tr>
-                                <th class="px-6 py-4">Date</th>
+                                <th class="px-6 py-4">Timestamp</th>
                                 <th class="px-6 py-4">Agent</th>
-                                <th class="px-6 py-4">Input</th>
-                                <th class="px-6 py-4">Cost</th>
+                                <th class="px-6 py-4">Input Data</th>
+                                <th class="px-6 py-4">Fee (ETH)</th>
                                 <th class="px-6 py-4">Status</th>
                                 <th class="px-6 py-4 text-right">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="history-table-body" class="divide-y divide-slate-100 text-sm text-slate-700">
+                        <tbody id="history-table-body" class="divide-y divide-white/5 text-sm text-slate-300 font-mono">
                              <!-- Rows by JS -->
                         </tbody>
                     </table>
@@ -255,13 +324,14 @@
         </div>
     </main>
 
-    <!-- TOAST NOTIFICATION -->
-    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+    <!-- TOAST -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-indigo-600 text-white px-6 py-4 rounded-xl shadow-[0_0_20px_rgba(79,70,229,0.5)] transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-bold flex items-center gap-3">
+        <div class="w-2 h-2 bg-white rounded-full animate-ping"></div>
         <p id="toast-msg">Notification</p>
     </div>
 
 <script>
-    // --- STATE MANAGEMENT ---
+    // --- STATE ---
     let currentGhType = 'summary';
     let selectedAudioFile = null;
 
@@ -271,11 +341,11 @@
         });
         document.getElementById(`view-${viewName}`).classList.remove('hidden');
         
-        // Update Nav
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'bg-slate-50', 'text-indigo-600'));
-        if(viewName === 'home') document.getElementById('nav-home').classList.add('active');
+        // Nav
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'text-white'));
+        if(viewName === 'home') document.getElementById('nav-home').classList.add('active', 'text-white');
         if(viewName === 'history') {
-            document.getElementById('nav-history').classList.add('active');
+            document.getElementById('nav-history').classList.add('active', 'text-white');
             loadHistoryData();
         }
     }
@@ -285,15 +355,15 @@
 
     function selectGhType(btn, type) {
         document.querySelectorAll('.gh-type-btn').forEach(b => {
-            b.classList.remove('active', 'border-indigo-500', 'bg-indigo-50', 'text-indigo-700');
-            b.classList.add('border-slate-200', 'text-slate-600');
+            b.classList.remove('active', 'border-indigo-500/50', 'bg-indigo-500/10', 'text-indigo-300');
+            b.classList.add('border-white/10', 'bg-white/5', 'text-slate-400');
         });
-        btn.classList.add('active', 'border-indigo-500', 'bg-indigo-50', 'text-indigo-700');
-        btn.classList.remove('border-slate-200', 'text-slate-600');
+        btn.classList.add('active', 'border-indigo-500/50', 'bg-indigo-500/10', 'text-indigo-300');
+        btn.classList.remove('border-white/10', 'bg-white/5', 'text-slate-400');
         currentGhType = type;
     }
 
-    // --- FILE UPLOAD HANDLING ---
+    // --- DRAG DROP ---
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('audioFileInput');
     const fileNameDisplay = document.getElementById('file-name-display');
@@ -302,77 +372,61 @@
     dropZone.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
     
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('bg-slate-50'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('bg-slate-50'));
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('bg-white/5'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('bg-white/5'));
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
-        dropZone.classList.remove('bg-slate-50');
+        dropZone.classList.remove('bg-white/5');
         handleFile(e.dataTransfer.files[0]);
     });
 
     function handleFile(file) {
         if(file && file.type.startsWith('audio/')) {
             selectedAudioFile = file;
-            fileNameDisplay.innerText = "Selected: " + file.name;
+            fileNameDisplay.innerText = ">> " + file.name;
             fileNameDisplay.classList.remove('hidden');
             btnAudio.disabled = false;
         } else {
-            showToast("Please select a valid audio file.");
+            showToast("Invalid File Type");
         }
     }
 
-    // --- WALLET & PAYMENT ---
-    const SEPOLIA_CHAIN_ID = '0xaa36a7'; 
-    const SEPOLIA_RPC_URL = 'https://ethereum-sepolia.publicnode.com';
+    // --- WEB3 ---
     const PAYMENT_RECIPIENT = '0x9497FE4B4ECA41229b9337abAEbCC91eCc7be23B';
-    const PAYMENT_AMOUNT = '0.001';
-
-    async function ensureWallet() {
-        if (!window.ethereum) throw new Error("MetaMask not found.");
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        
-        // Switch Net
-        try {
-            await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: SEPOLIA_CHAIN_ID }] });
-        } catch (e) {
-            if (e.code === 4902) {
-                 await window.ethereum.request({
-                    method: 'wallet_addEthereumChain',
-                    params: [{ 
-                        chainId: SEPOLIA_CHAIN_ID, 
-                        chainName: 'Sepolia Testnet',
-                        rpcUrls: [SEPOLIA_RPC_URL],
-                        nativeCurrency: { name: 'SepoliaETH', symbol: 'ETH', decimals: 18 }
-                    }]
-                });
-            } else throw e;
-        }
-        return provider.getSigner();
+    
+    // Dynamic Pricing
+    function getPriceForAgent() {
+        if(selectedAudioFile) return '0.0011';
+        return (Math.random() * (0.0009 - 0.0001) + 0.0001).toFixed(4); // 0.0001 - 0.0009
     }
 
     async function processPayment(statusFn) {
-        const signer = await ensureWallet();
-        statusFn("Processing Payment...");
+        if (!window.ethereum) throw new Error("MetaMask not found");
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
+        
+        const price = getPriceForAgent();
+        statusFn(`Signing Transfer: ${price} ETH...`);
+        
         const tx = await signer.sendTransaction({
             to: PAYMENT_RECIPIENT,
-            value: ethers.utils.parseEther(PAYMENT_AMOUNT)
+            value: ethers.utils.parseEther(price)
         });
-        statusFn("Verifying Transaction...");
+        statusFn("Verifying On-Chain...");
         await tx.wait();
         return tx.hash;
     }
 
-    // --- ACTIONS ---
-
+    // --- API CALLS ---
     async function runGithubAgent() {
         const url = document.getElementById('repoUrlInput').value;
-        if (!url) return showToast("Enter a valid URL");
+        if (!url) return showToast("Enter Repo URL");
         
-        setLoading(true, "Github Analysis Started");
+        setLoading(true, "Initializing Github Agent");
         try {
             const hash = await processPayment((msg) => updateLoadingText(msg));
-            updateLoadingText("Analyzing Repository...");
+            updateLoadingText("Agent Analyzing Codebase...");
             
             const res = await fetch('/api/github/', {
                 method: 'POST',
@@ -393,10 +447,10 @@
     async function runAudioAgent() {
         if (!selectedAudioFile) return;
         
-        setLoading(true, "Audio Analysis Started...");
+        setLoading(true, "Initializing Voice Node");
         try {
             const hash = await processPayment((msg) => updateLoadingText(msg));
-            updateLoadingText("Transcribing & Diarizing...");
+            updateLoadingText("ElevenLabs Transcription...");
             
             const formData = new FormData();
             formData.append('audio_file', selectedAudioFile);
@@ -418,55 +472,42 @@
             setLoading(false);
         }
     }
-    
-    // --- UI HELPERS ---
-
-    function setLoading(on, text="Processing") {
-        const el = document.getElementById('loading-overlay');
-        const txt = document.getElementById('loading-text');
-        if(on) { el.classList.remove('hidden'); txt.innerText = text; }
-        else { el.classList.add('hidden'); }
-    }
-    
-    function updateLoadingText(t) { document.getElementById('loading-text').innerText = t; }
 
     function showResults(contentHTML) {
-        // Generic Result View (GitHub)
         document.getElementById('results-container').innerHTML = contentHTML;
         switchView('results');
     }
 
     function showAudioResults(data) {
-        // Tabbed Audio View
         const tabsHtml = `
-            <div class="border-b border-slate-200 mb-6 flex gap-4 overflow-x-auto">
-                <button onclick="switchTab('summary')" class="tab-btn px-4 py-2 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600" id="tab-summary">Summary</button>
-                <button onclick="switchTab('transcript')" class="tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-indigo-600" id="tab-transcript">Transcript</button>
-                <button onclick="switchTab('minutes')" class="tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-indigo-600" id="tab-minutes">Minutes</button>
-                <button onclick="switchTab('action')" class="tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-indigo-600" id="tab-action">Action Items</button>
+            <div class="border-b border-white/10 mb-6 flex gap-4 overflow-x-auto">
+                <button onclick="switchTab('summary')" class="tab-btn px-4 py-2 text-sm font-bold text-indigo-400 border-b-2 border-indigo-500 font-mono" id="tab-summary">SUMMARY</button>
+                <button onclick="switchTab('transcript')" class="tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-white font-mono" id="tab-transcript">TRANSCRIPT</button>
+                <button onclick="switchTab('minutes')" class="tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-white font-mono" id="tab-minutes">MINUTES</button>
+                <button onclick="switchTab('action')" class="tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-white font-mono" id="tab-action">ACTIONS</button>
             </div>
             
             <div id="content-summary" class="tab-content animate-fade-in block">
-               ${data.summary ? data.summary : '<p>No summary available.</p>'}
+               ${data.summary ? data.summary : '<p class="text-slate-500 font-mono">No summary available.</p>'}
             </div>
 
             <div id="content-transcript" class="tab-content hidden animate-fade-in">
-                <div class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                <div class="space-y-6 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
                     ${renderTranscript(data.utterances, data.transcript)}
                 </div>
             </div>
 
             <div id="content-minutes" class="tab-content hidden animate-fade-in">
-               ${data.minutes ? data.minutes : '<p>No minutes available.</p>'}
+               ${data.minutes ? data.minutes : '<p class="text-slate-500 font-mono">No minutes available.</p>'}
             </div>
 
             <div id="content-action" class="tab-content hidden animate-fade-in space-y-6">
-                <div class="bg-green-50 p-6 rounded-xl border border-green-100">
-                    <h3 class="font-bold text-green-900 mb-4 flex items-center gap-2">✅ To-Dos</h3>
+                <div class="bg-emerald-500/10 p-6 rounded-xl border border-emerald-500/20">
+                    <h3 class="font-bold text-emerald-400 mb-4 flex items-center gap-2 font-mono">>> TO_DO_LIST</h3>
                     ${data.todos || 'None'}
                 </div>
-                <div class="bg-red-50 p-6 rounded-xl border border-red-100">
-                    <h3 class="font-bold text-red-900 mb-4 flex items-center gap-2">📅 Deadlines</h3>
+                <div class="bg-pink-500/10 p-6 rounded-xl border border-pink-500/20">
+                    <h3 class="font-bold text-pink-400 mb-4 flex items-center gap-2 font-mono">>> DEADLINES</h3>
                     ${data.deadlines || 'None'}
                 </div>
             </div>
@@ -475,35 +516,23 @@
         switchView('results');
     }
 
-    // Assign to window for onclick access
-    window.switchTab = function(tabName) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-        document.querySelectorAll('.tab-btn').forEach(el => {
-            el.classList.remove('text-indigo-600', 'border-b-2', 'border-indigo-600', 'font-bold');
-            el.classList.add('text-slate-500', 'font-medium');
-        });
-
-        document.getElementById(`content-${tabName}`).classList.remove('hidden');
-        const btn = document.getElementById(`tab-${tabName}`);
-        btn.classList.add('text-indigo-600', 'border-b-2', 'border-indigo-600', 'font-bold');
-        btn.classList.remove('text-slate-500', 'font-medium');
-    }
-
+    // renderTranscript with different speaker/colors
     function renderTranscript(utterances, fallbackText) {
         if (!utterances || utterances.length === 0) {
-            return `<p class="text-slate-600">${fallbackText || 'No transcript available.'}</p>`;
+            return `<p class="text-slate-500 font-mono">${fallbackText || 'No transcript available.'}</p>`;
         }
         
         return utterances.map((u, i) => {
-             // Assign a color based on speaker ID character code to differentiate
              const spk = u.speaker || "Unknown";
-             const colorClass = String(spk).charCodeAt(0) % 2 === 0 ? "bg-indigo-50 text-indigo-900" : "bg-white border border-slate-200 text-slate-900";
-             const align = String(spk).charCodeAt(0) % 2 === 0 ? "ml-auto" : "mr-auto";
+             const isA = String(spk).charCodeAt(0) % 2 === 0;
+             const align = isA ? "ml-auto items-end" : "mr-auto items-start";
+             const bg = isA ? "bg-indigo-600 text-white" : "bg-slate-700 text-slate-200";
+             const label = isA ? "text-indigo-400" : "text-slate-400";
              
              return `
-                <div class="flex flex-col ${align} max-w-[80%] mb-4">
-                    <span class="text-xs font-bold text-slate-500 mb-1 px-1">${spk}</span>
-                    <div class="${colorClass} p-3 rounded-2xl rounded-tl-none shadow-sm text-sm">
+                <div class="flex flex-col ${align} max-w-[80%] mb-2 chat-bubble">
+                    <span class="text-[10px] font-bold ${label} mb-1 px-1 uppercase tracking-widest">${spk}</span>
+                    <div class="${bg} p-4 rounded-2xl ${isA ? 'rounded-tr-none' : 'rounded-tl-none'} shadow-md text-sm leading-relaxed">
                         ${u.text}
                     </div>
                 </div>
@@ -511,56 +540,75 @@
         }).join('');
     }
 
+    window.switchTab = function(tabName) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(el => {
+            el.classList.remove('text-indigo-400', 'border-b-2', 'border-indigo-500');
+            el.classList.add('text-slate-500');
+        });
+
+        document.getElementById(`content-${tabName}`).classList.remove('hidden');
+        const btn = document.getElementById(`tab-${tabName}`);
+        btn.classList.add('text-indigo-400', 'border-b-2', 'border-indigo-500');
+        btn.classList.remove('text-slate-500');
+    }
+
+    // --- HELPERS ---
+    function setLoading(on, text="PROCESSING") {
+        const el = document.getElementById('loading-overlay');
+        const txt = document.getElementById('loading-text');
+        if(on) { el.classList.remove('hidden'); txt.innerText = text.toUpperCase(); }
+        else { el.classList.add('hidden'); }
+    }
+    
+    function updateLoadingText(t) { document.getElementById('loading-text').innerText = t.toUpperCase(); }
+
     function showToast(msg) {
         const el = document.getElementById('toast');
         document.getElementById('toast-msg').innerText = msg;
         el.classList.remove('translate-y-20', 'opacity-0');
         setTimeout(() => el.classList.add('translate-y-20', 'opacity-0'), 3000);
     }
-
+    
     function getCookie(name) {
         if (!document.cookie) return null;
         const xsrf = document.cookie.split('; ').find(row => row.startsWith(name + '='));
         return xsrf ? decodeURIComponent(xsrf.split('=')[1]) : null;
     }
 
-    // --- HISTORY & CHARTS ---
-    let chartInstance1, chartInstance2;
+    // --- CHARTS & INIT ---
+     let chartInstance1, chartInstance2;
 
     async function loadHistoryData() {
         const res = await fetch('/api/stats/');
         if(!res.ok) return;
         const data = await res.json();
 
-        // 1. Stats
         document.getElementById('stat-total-spent').innerText = data.total_spent + " ETH";
         document.getElementById('stat-total-files').innerText = data.history.length;
         
-        // 2. Table
         const tbody = document.getElementById('history-table-body');
         tbody.innerHTML = data.history.map(item => `
-            <tr class="hover:bg-slate-50 transition">
-                <td class="px-6 py-4 text-slate-500">${item.date}</td>
-                 <td class="px-6 py-4"><span class="bg-indigo-50 text-indigo-700 font-bold px-2 py-1 rounded text-xs border border-indigo-100">${item.agent}</span></td>
+            <tr class="hover:bg-white/5 transition">
+                <td class="px-6 py-4 text-slate-400 font-mono text-xs">${item.date}</td>
+                 <td class="px-6 py-4"><span class="bg-indigo-500/20 text-indigo-300 font-bold px-2 py-1 rounded text-xs border border-indigo-500/30">${item.agent}</span></td>
                 <td class="px-6 py-4 font-mono text-xs text-slate-500 truncate max-w-[200px]" title="${item.input}">${item.input}</td>
-                <td class="px-6 py-4 font-medium text-slate-900">${item.cost} ETH</td>
-                <td class="px-6 py-4"><span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">Success</span></td>
+                <td class="px-6 py-4 font-mono text-indigo-400">${item.cost}</td>
+                <td class="px-6 py-4"><span class="text-emerald-400 text-xs font-bold uppercase tracking-wider">● CONFIRMED</span></td>
                 <td class="px-6 py-4 text-right">
-                    <button onclick="viewHistoryItem(${item.id})" class="text-indigo-600 hover:text-indigo-800 font-bold text-sm bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded transition">View</button>
+                    <button onclick="viewHistoryItem(${item.id})" class="text-white hover:text-indigo-400 font-bold text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded transition uppercase">Open</button>
                 </td>
             </tr>
         `).join('');
 
-        // 3. Charts
         initCharts(data.spending, data.services);
     }
 
-    // Handle View History Logic
     window.viewHistoryItem = async function(id) {
-        setLoading(true, "Fetching Details...");
+        setLoading(true, "FETCHING_DATA");
         try {
             const res = await fetch(`/api/tx/${id}/`);
-            if(!res.ok) throw new Error("Failed to load details");
+            if(!res.ok) throw new Error("Load Failed");
             const data = await res.json();
             
             if(data.category === 'AUDIO') {
@@ -569,7 +617,7 @@
                 showResults(data.output.summary || JSON.stringify(data.output));
             }
         } catch(e) {
-            showToast("Error: " + e.message);
+            showToast(e.message);
         } finally {
             setLoading(false);
         }
@@ -582,20 +630,32 @@
         if(chartInstance1) chartInstance1.destroy();
         if(chartInstance2) chartInstance2.destroy();
 
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
+
         chartInstance1 = new Chart(ctx1, {
             type: 'line',
             data: {
                 labels: Object.keys(spendingData),
                 datasets: [{
-                    label: 'ETH Spent',
+                    label: 'ETH',
                     data: Object.values(spendingData),
-                    borderColor: '#4F46E5',
-                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                    borderWidth: 2,
                     tension: 0.4,
-                    fill: true
+                    fill: true,
+                    pointBackgroundColor: '#fff'
                 }]
             },
-            options: { responsive: true, plugins: { legend: { display: false } } }
+            options: { 
+                responsive: true, 
+                plugins: { legend: { display: false } },
+                scales: { 
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' } },
+                    x: { grid: { display: false } }
+                }
+            }
         });
 
         chartInstance2 = new Chart(ctx2, {
@@ -604,20 +664,24 @@
                 labels: Object.keys(servicesData),
                 datasets: [{
                     data: Object.values(servicesData),
-                    backgroundColor: ['#4F46E5', '#8B5CF6']
+                    backgroundColor: ['#6366f1', '#a855f7'],
+                    borderWidth: 0
                 }]
             },
-            options: { cutout: '70%' }
+            options: { cutout: '75%', plugins: { legend: { position: 'right' } } }
         });
     }
 
-    // Init Balance
-    (async () => {
+    // Init Balance load
+     (async () => {
         try {
             if(window.ethereum) {
                 const provider = new ethers.providers.Web3Provider(window.ethereum);
-                const bal = await provider.getBalance((await provider.listAccounts())[0]);
-                document.getElementById('balanceDisplay').innerText = parseFloat(ethers.utils.formatEther(bal)).toFixed(4) + " ETH";
+                const accts = await provider.listAccounts();
+                if(accts.length > 0) {
+                     const bal = await provider.getBalance(accts[0]);
+                     document.getElementById('balanceDisplay').innerText = parseFloat(ethers.utils.formatEther(bal)).toFixed(4) + " ETH";
+                }
             }
         } catch(e) {}
     })();

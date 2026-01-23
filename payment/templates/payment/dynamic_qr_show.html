@@ -1,0 +1,89 @@
+{% extends 'payment/base.html' %}
+
+{% block title %}Payment Request | PayLink{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto pt-10 animate-fade-in">
+    <div class="glass-panel rounded-2xl p-8 border border-emerald-500/20 shadow-2xl shadow-emerald-500/10 text-center relative overflow-hidden">
+        
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-emerald-600/20 rounded-full blur-[80px] -z-10 pointer-events-none"></div>
+
+        <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-xs font-bold uppercase tracking-widest mb-4">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            New Request Created
+        </div>
+
+        <h1 class="text-3xl font-bold text-white mb-2">Scan to Pay</h1>
+        <p class="text-slate-400 mb-8">Dynamic Payment Request on Sepolia.</p>
+
+        <div class="bg-white/5 inline-block p-4 rounded-xl border border-white/10 mb-6">
+            <div id="qrcode" class="bg-white p-2 rounded-lg"></div>
+        </div>
+
+        <div class="flex flex-col items-center gap-2 mb-8">
+            <div class="text-sm font-bold text-slate-500 uppercase tracking-widest">Amount Due</div>
+            <div class="text-4xl font-mono font-bold text-white flex items-center gap-2">
+                {{ payment_request.amount_mon }} <span class="text-emerald-400">ETH</span>
+            </div>
+            {% if payment_request.note %}
+            <div class="mt-2 px-4 py-2 bg-white/5 rounded-lg text-sm text-slate-300 border border-white/5">
+                "{{ payment_request.note }}"
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="bg-black/40 rounded-lg p-4 mb-8 text-left border border-white/5">
+            <div class="flex justify-between mb-2">
+                <span class="text-slate-500 text-xs uppercase">Payment Link</span>
+                <span class="text-slate-400 text-xs font-mono copy-btn cursor-pointer hover:text-white transition" onclick="copyLink()">Copy URL</span>
+            </div>
+            <div class="text-indigo-300 font-mono text-xs break-all" id="payment-url">Loading...</div>
+        </div>
+
+        <div class="flex gap-4 justify-center">
+            <button onclick="shareLink()" class="px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 text-slate-300 font-bold transition">
+                Share Link
+            </button>
+            <a href="{% url 'pay_dynamic' payment_request.id %}" target="_blank" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-lg shadow-emerald-500/20">
+                Open Page
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Generate QR Code
+    // The QR should point to the payment page (using dynamic ID)
+    const payUrl = window.location.origin + "{% url 'pay_dynamic' payment_request.id %}";
+    document.getElementById('payment-url').innerText = payUrl;
+    
+    new QRCode(document.getElementById("qrcode"), {
+        text: payUrl,
+        width: 200,
+        height: 200,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+    });
+
+    function copyLink() {
+        navigator.clipboard.writeText(payUrl).then(() => {
+            alert("Payment Link copied!");
+        });
+    }
+
+    function shareLink() {
+        if (navigator.share) {
+            navigator.share({
+                title: 'PayLink Request',
+                text: 'Please pay {{ payment_request.amount_mon }} ETH on Sepolia.',
+                url: payUrl,
+            });
+        } else {
+            copyLink();
+        }
+    }
+</script>
+{% endblock %}

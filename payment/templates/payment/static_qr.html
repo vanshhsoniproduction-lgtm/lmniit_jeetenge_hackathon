@@ -1,0 +1,64 @@
+{% extends 'payment/base.html' %}
+
+{% block title %}Static QR | PayLink{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto pt-10 animate-fade-in">
+    <div class="glass-panel rounded-2xl p-8 border border-indigo-500/20 shadow-2xl shadow-indigo-500/10 text-center relative overflow-hidden">
+        
+        <!-- Glow Bg -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-indigo-600/20 rounded-full blur-[80px] -z-10 pointer-events-none"></div>
+
+        <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mb-2">Static Payment QR</h1>
+        <p class="text-slate-400 mb-8">Scan to pay fixed amount instantly on Sepolia.</p>
+
+        <div class="bg-white/5 inline-block p-4 rounded-xl border border-white/10 mb-6">
+            <div id="qrcode" class="bg-white p-2 rounded-lg"></div>
+        </div>
+
+        <div class="flex flex-col items-center gap-2 mb-8">
+            <div class="text-sm font-bold text-slate-500 uppercase tracking-widest">Amount</div>
+            <div class="text-4xl font-mono font-bold text-white flex items-center gap-2">
+                0.10 <span class="text-blue-400">ETH</span>
+            </div>
+            <div class="text-xs text-slate-500 mt-2">Zero Platform Fees</div>
+        </div>
+
+        <div class="bg-black/40 rounded-lg p-4 mb-8 text-left border border-white/5">
+            <div class="flex justify-between mb-2">
+                <span class="text-slate-500 text-xs uppercase">Receiver</span>
+                <span class="text-slate-400 text-xs font-mono copy-btn cursor-pointer hover:text-white transition" onclick="copyToClipboard('{{ receiver_wallet }}')">Copy</span>
+            </div>
+            <div class="text-indigo-300 font-mono text-sm break-all">{{ receiver_wallet }}</div>
+        </div>
+
+        <a href="{% url 'pay_static' %}" target="_blank" class="inline-flex items-center gap-2 btn-primary px-8 py-3 rounded-xl text-white font-bold shadow-lg">
+            <span>Open Payment Page</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L14 10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Generate QR Code
+    // The QR should point to the payment page
+    const payUrl = window.location.origin + "{% url 'pay_static' %}";
+    
+    new QRCode(document.getElementById("qrcode"), {
+        text: payUrl,
+        width: 200,
+        height: 200,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+    });
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Address copied!");
+        });
+    }
+</script>
+{% endblock %}

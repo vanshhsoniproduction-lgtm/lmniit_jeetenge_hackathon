@@ -3,155 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RepoSage - AI GitHub Summarizer</title>
+    <title>Web3 AI | The Future of Code Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #050505; 
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .glass-card {
+            background: rgba(20, 20, 25, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+        .glow-text {
+            text-shadow: 0 0 20px rgba(79, 70, 229, 0.5);
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+    </style>
 </head>
-<body class="bg-slate-900 text-white font-sans antialiased">
+<body class="text-white min-h-screen flex flex-col">
 
-    <nav class="flex items-center justify-between px-6 py-4 bg-slate-800 border-b border-slate-700">
-        <div class="flex items-center space-x-2">
-            <svg class="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-            <span class="text-xl font-bold tracking-tight">RepoSage</span>
+    <nav class="w-full px-8 py-6 flex justify-between items-center z-10 glass-card fixed top-0 left-0 right-0 border-b-0 border-white/5">
+        <div class="flex items-center gap-3">
+             <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
+                AI
+            </div>
+            <span class="text-xl font-bold tracking-tight">Web3<span class="text-indigo-500">.AI</span></span>
         </div>
-        <div>
-            <a href="https://github.com" target="_blank" class="text-sm text-slate-400 hover:text-white transition">GitHub</a>
+        <div class="hidden md:flex gap-8 text-sm font-medium text-slate-400">
+            <a href="#" class="hover:text-white transition">Features</a>
+            <a href="#" class="hover:text-white transition">Agents</a>
+            <a href="#" class="hover:text-white transition">Pricing</a>
         </div>
+        <button id="connectBtn" class="px-6 py-2.5 bg-white text-black font-bold rounded-lg hover:bg-indigo-50 transition flex items-center gap-2 text-sm shadow-lg shadow-white/10">
+            <span>Connect Wallet</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+        </button>
     </nav>
 
-    <main class="flex flex-col items-center justify-center text-center mt-20 px-4">
-        <div class="max-w-3xl space-y-6">
-            <h1 class="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
-                Summarize any GitHub repo in seconds
-            </h1>
-            <p class="text-lg text-slate-400">
-                Stop wasting time reading thousands of lines of code. Connect your wallet and let our AI agent break down complex repositories into simple summaries.
-            </p>
-            
-            <div class="pt-4">
-                <button id="connectBtn" class="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg shadow-indigo-500/30 transition-all transform hover:scale-105 flex items-center justify-center mx-auto gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                    <span>Get Started with MetaMask</span>
-                </button>
-                <div id="status" class="mt-4 text-sm text-indigo-300 h-6"></div>
-                <div id="error" class="mt-2 text-sm text-red-400 font-semibold"></div>
+    <main class="flex-1 flex flex-col items-center justify-center pt-32 pb-20 px-4 relative overflow-hidden">
+        
+        <!-- Hero Glow -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[120px] -z-10"></div>
+
+        <div class="text-center max-w-4xl mx-auto space-y-8 animate-fade-in-up">
+            <div class="inline-block px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-xs font-mono font-bold tracking-widest uppercase mb-4">
+                v2.0 Beta Live
             </div>
+            
+            <h1 class="text-6xl md:text-7xl font-extrabold tracking-tight leading-tight">
+                Decentralized Code <br/> 
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 glow-text">Intelligence Layer</span>
+            </h1>
+            
+            <p class="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                Connect your wallet to unlock autonomous AI agents. Summarize repos, audit contracts, and extract meeting insights—paid per execution in ETH.
+            </p>
+
+            <div class="flex flex-col md:flex-row items-center justify-center gap-4 pt-4">
+                <button onclick="document.getElementById('connectBtn').click()" class="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/40 transition-all hover:scale-105 flex items-center gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    Start Analysis
+                </button>
+                 <a href="https://github.com" target="_blank" class="px-8 py-4 glass-card hover:bg-white/5 text-white font-semibold rounded-xl transition flex items-center gap-3">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    View Source
+                </a>
+            </div>
+
+            <div id="status" class="h-6 text-sm font-mono text-indigo-400 mt-4"></div>
+            <div id="error" class="text-sm font-mono text-pink-500 mt-2"></div>
         </div>
 
-        <div class="grid md:grid-cols-3 gap-6 mt-20 max-w-5xl w-full text-left">
-            <div class="p-6 bg-slate-800 rounded-xl border border-slate-700 hover:border-indigo-500 transition">
-                <div class="w-10 h-10 bg-indigo-900/50 rounded-lg flex items-center justify-center mb-4 text-indigo-400">
+        <!-- Features Grid -->
+        <div class="grid md:grid-cols-3 gap-8 mt-24 max-w-6xl w-full px-4">
+            <div class="glass-card p-8 rounded-2xl hover:bg-white/5 transition group">
+                <div class="w-12 h-12 bg-indigo-500/10 rounded-lg flex items-center justify-center mb-6 text-indigo-400 group-hover:scale-110 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold mb-3">GitHub Agents</h3>
+                <p class="text-slate-400 leading-relaxed">Autonomous agents that parse repos, summarize architecture, and review PRs instantly.</p>
+            </div>
+             <div class="glass-card p-8 rounded-2xl hover:bg-white/5 transition group">
+                <div class="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center mb-6 text-purple-400 group-hover:scale-110 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold mb-3">Audio Intelligence</h3>
+                <p class="text-slate-400 leading-relaxed">Turn meetings into minutes. Upload audio, get deadlines, summaries, and action items extracted.</p>
+            </div>
+             <div class="glass-card p-8 rounded-2xl hover:bg-white/5 transition group">
+                <div class="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center mb-6 text-green-400 group-hover:scale-110 transition">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                 </div>
-                <h3 class="text-lg font-bold text-white mb-2">MetaMask Login</h3>
-                <p class="text-slate-400 text-sm">Secure, passwordless authentication using your Web3 wallet signature.</p>
-            </div>
-
-            <div class="p-6 bg-slate-800 rounded-xl border border-slate-700 hover:border-indigo-500 transition">
-                <div class="w-10 h-10 bg-indigo-900/50 rounded-lg flex items-center justify-center mb-4 text-indigo-400">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                </div>
-                <h3 class="text-lg font-bold text-white mb-2">AI Summary Agent</h3>
-                <p class="text-slate-400 text-sm">Instantly extract features, installation steps, and tech stack details.</p>
-            </div>
-
-            <div class="p-6 bg-slate-800 rounded-xl border border-slate-700 hover:border-indigo-500 transition">
-                <div class="w-10 h-10 bg-indigo-900/50 rounded-lg flex items-center justify-center mb-4 text-indigo-400">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                </div>
-                <h3 class="text-lg font-bold text-white mb-2">NodeOps Deployed</h3>
-                <p class="text-slate-400 text-sm">Hosted on high-performance infrastructure for reliable uptime.</p>
+                <h3 class="text-xl font-bold mb-3">Verifiable Compute</h3>
+                <p class="text-slate-400 leading-relaxed">Every transaction is signed and verified on Sepolia. Pay-per-use with no hidden subscriptions.</p>
             </div>
         </div>
+
     </main>
 
-    <footer class="mt-20 py-6 text-center text-slate-600 text-sm">
-        &copy; 2026 RepoSage. Built for Hackathon.
+    <footer class="py-8 text-center text-slate-600 text-sm glass-card border-x-0 border-b-0">
+        <div class="flex items-center justify-center gap-2 mb-2">
+            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            Systems Operational
+        </div>
+        &copy; 2026 Web3 AI Protocol. Built for Hackathon.
     </footer>
 
-<script>
-    const connectBtn = document.getElementById('connectBtn');
-    const statusDiv = document.getElementById('status');
-    const errorDiv = document.getElementById('error');
-
-    // Helper to get CSRF token
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+    <script>
+        const connectBtn = document.getElementById('connectBtn');
+        const statusDiv = document.getElementById('status');
+        const errorDiv = document.getElementById('error');
+    
+        // Helper to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
                 }
             }
+            return cookieValue;
         }
-        return cookieValue;
-    }
-
-    connectBtn.addEventListener('click', async () => {
-        errorDiv.innerText = '';
-        statusDiv.innerText = 'Initializing Wallet...';
-        connectBtn.disabled = true;
-        connectBtn.classList.add('opacity-50', 'cursor-not-allowed');
-
-        if (typeof window.ethereum === 'undefined') {
-            errorDiv.innerText = 'MetaMask is not installed!';
-            connectBtn.disabled = false;
-            connectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            return;
-        }
-
-        try {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            await provider.send("eth_requestAccounts", []);
-            const signer = provider.getSigner();
-            const address = await signer.getAddress();
-            
-            statusDiv.innerText = `Connected: ${address.substring(0,6)}... Requesting Nonce...`;
-
-            // Get Nonce
-            const nonceResponse = await fetch(`/auth/nonce/?address=${address}`);
-            if(!nonceResponse.ok) throw new Error("Failed to fetch nonce");
-            const nonceData = await nonceResponse.json();
-            
-            if (nonceData.error) throw new Error(nonceData.error);
-            
-            // Sign Message
-            const message = `Sign this message to log in to Django DApp: ${nonceData.nonce}`;
-            statusDiv.innerText = 'Please sign the message in MetaMask...';
-            
-            const signature = await signer.signMessage(message);
-
-            // Verify
-            statusDiv.innerText = 'Verifying signature...';
-            const verifyResponse = await fetch('/auth/verify/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({ address, signature })
-            });
-
-            const verifyData = await verifyResponse.json();
-
-            if (verifyData.success) {
-                statusDiv.innerText = 'Login successful! Redirecting...';
-                window.location.href = verifyData.redirect_url;
-            } else {
-                throw new Error(verifyData.error || 'Verification failed');
+    
+        connectBtn.addEventListener('click', async () => {
+            errorDiv.innerText = '';
+            statusDiv.innerText = 'Initializing Wallet...';
+            connectBtn.disabled = true;
+            connectBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    
+            if (typeof window.ethereum === 'undefined') {
+                errorDiv.innerText = 'MetaMask is not installed!';
+                connectBtn.disabled = false;
+                connectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                return;
             }
-
-        } catch (err) {
-            console.error(err);
-            errorDiv.innerText = err.message || 'An error occurred';
-            statusDiv.innerText = '';
-            connectBtn.disabled = false;
-            connectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-    });
-</script>
+    
+            try {
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                const signer = provider.getSigner();
+                const address = await signer.getAddress();
+                
+                statusDiv.innerText = `Connected: ${address.substring(0,6)}... Requesting Nonce...`;
+    
+                // Get Nonce
+                const nonceResponse = await fetch(`/auth/nonce/?address=${address}`);
+                if(!nonceResponse.ok) throw new Error("Failed to fetch nonce");
+                const nonceData = await nonceResponse.json();
+                
+                if (nonceData.error) throw new Error(nonceData.error);
+                
+                // Sign Message
+                const message = `Sign this message to log in to Django DApp: ${nonceData.nonce}`;
+                statusDiv.innerText = 'Please sign the message in MetaMask...';
+                
+                const signature = await signer.signMessage(message);
+    
+                // Verify
+                statusDiv.innerText = 'Verifying signature...';
+                const verifyResponse = await fetch('/auth/verify/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ address, signature })
+                });
+    
+                const verifyData = await verifyResponse.json();
+    
+                if (verifyData.success) {
+                    statusDiv.innerText = 'Login successful! Redirecting...';
+                    window.location.href = verifyData.redirect_url;
+                } else {
+                    throw new Error(verifyData.error || 'Verification failed');
+                }
+    
+            } catch (err) {
+                console.error(err);
+                errorDiv.innerText = err.message || 'An error occurred';
+                statusDiv.innerText = '';
+                connectBtn.disabled = false;
+                connectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        });
+    </script>
 </body>
 </html>

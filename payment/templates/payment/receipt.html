@@ -1,0 +1,61 @@
+{% extends 'payment/base.html' %}
+
+{% block title %}Receipt | PayLink{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto pt-10 animate-fade-in">
+    <div class="glass-panel rounded-2xl p-8 border border-emerald-500/20 shadow-2xl shadow-emerald-500/10 text-center relative overflow-hidden">
+        
+        <div class="absolute inset-0 bg-gradient-to-b from-emerald-500/10 to-transparent pointer-events-none"></div>
+
+        <div class="w-16 h-16 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/40">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path></svg>
+        </div>
+
+        <h1 class="text-3xl font-bold text-white mb-2">Payment Successful</h1>
+        <p class="text-emerald-400 mb-8 font-medium">Transaction has been verified on Sepolia.</p>
+
+        <div class="bg-black/40 rounded-xl p-6 border border-white/5 mb-8 text-left space-y-4 relative z-10">
+            
+            <div class="flex justify-between items-center pb-4 border-b border-white/5">
+                <span class="text-slate-500 text-xs uppercase">Amount Paid</span>
+                <span class="text-xl font-mono font-bold text-white">{{ transaction.amount_mon }} ETH</span>
+            </div>
+
+            <div>
+                <span class="text-slate-500 text-xs uppercase block mb-1">Transaction Hash</span>
+                <a href="https://sepolia.etherscan.io/tx/{{ transaction.tx_hash }}" target="_blank" class="text-indigo-400 text-xs font-mono break-all hover:text-indigo-300 transition flex items-center gap-1">
+                    {{ transaction.tx_hash }}
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L14 10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                </a>
+            </div>
+
+            <div>
+                <span class="text-slate-500 text-xs uppercase block mb-1">Payer (You)</span>
+                <span class="text-slate-300 text-xs font-mono break-all">{{ transaction.payer_wallet }}</span>
+            </div>
+            
+            <div class="flex justify-between items-center pt-2">
+                <span class="text-slate-500 text-xs uppercase">Date</span>
+                <span class="text-slate-300 text-xs">{{ transaction.created_at|date:"M d, Y H:i" }}</span>
+            </div>
+            
+            {% if transaction.request and transaction.request.note %}
+            <div class="pt-2 border-t border-white/5 mt-2">
+                <span class="text-slate-500 text-xs uppercase block mb-1">Note</span>
+                <span class="text-slate-300 text-sm italic">"{{ transaction.request.note }}"</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="flex gap-4 justify-center relative z-10">
+            <a href="{% url 'create_dynamic_qr' %}" class="px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 text-slate-300 font-bold transition">
+                Create New
+            </a>
+            <a href="{% url 'payment_history' %}" class="px-6 py-3 rounded-xl btn-primary text-white font-bold transition shadow-lg">
+                View History
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
