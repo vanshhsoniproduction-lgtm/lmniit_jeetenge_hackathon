@@ -1,0 +1,36 @@
+# ===========================================
+# RENDER.YAML - Render Deployment Configuration
+# ===========================================
+# Ye file Render ko batati hai ki app kaise deploy karna hai
+# ===========================================
+
+services:
+  - type: web
+    name: web3-ai
+    runtime: python
+    region: oregon  # Ya singapore agar India ke paas chahiye
+    plan: free      # Free tier use karo initially
+
+    # Build Configuration
+    buildCommand: "./build.sh"
+    
+    # Start Command - Gunicorn se Django chalao
+    startCommand: "gunicorn web3_ai.wsgi:application"
+
+    # Environment Variables - Render Dashboard mein set karo
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true  # Render auto-generate karega
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: PYTHON_VERSION
+        value: "3.11.4"
+      
+      # Ye keys Render Dashboard mein manually add karo!
+      # GEMINI_API_KEY
+      # ELEVENLABS_API_KEY
+      # SUPABASE_URL
+      # SUPABASE_ANON_KEY
+      # SUPABASE_SERVICE_ROLE_KEY

@@ -1,6 +1,36 @@
+# ===========================================
+# WEB3_AI PROJECT - PYTHON DEPENDENCIES
+# Render Deployment Ready
+# ===========================================
+
+# Django Framework
 Django>=4.2
+
+# Production WSGI Server (Render ke liye must-have!)
+gunicorn>=21.0
+
+# Environment Variables Management
+python-decouple>=3.8
+
+# Static Files for Production (Render ke liye must-have!)
+whitenoise>=6.6
+
+# Blockchain / Web3 Dependencies
+web3>=6.0
 eth-account>=0.8.0
+
+# Google Generative AI (Gemini)
 google-genai
-requests
-web3
-beautifulsoup4
+
+# HTTP Requests
+requests>=2.31
+
+# Web Scraping
+beautifulsoup4>=4.12
+
+# Database (Agar PostgreSQL use karna ho future mein)
+# psycopg2-binary>=2.9
+# dj-database-url>=2.1
+
+# Supabase Client (Optional - agar direct Supabase use karna ho)
+# supabase>=2.0
