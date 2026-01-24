@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt  # 🔥 CSRF exempt for API endpoints
 from eth_account import Account
 from eth_account.messages import encode_defunct
 from .models import WalletUser
@@ -14,6 +15,7 @@ def landing_page(request):
         return redirect('dashboard')
     return render(request, 'landing.html')
 
+@csrf_exempt  # API endpoint - no CSRF token needed
 def get_nonce(request):
     """
     Get or create a user based on wallet address and return their nonce.
@@ -30,6 +32,7 @@ def get_nonce(request):
     
     return JsonResponse({'nonce': str(user.nonce)})
 
+@csrf_exempt  # API endpoint - wallet signature is the auth
 @require_POST
 def verify_signature(request):
     """

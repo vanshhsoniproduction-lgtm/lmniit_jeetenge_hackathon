@@ -34,6 +34,13 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 # ALLOWED_HOSTS: Comma-separated domains (.env mein set karo)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
 
+# CSRF Trusted Origins - Production ke liye (Render URL add karo)
+CSRF_TRUSTED_ORIGINS = [
+    'https://web3-ai-wg4j.onrender.com',
+    'https://*.onrender.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
 
 # Application definition
 
