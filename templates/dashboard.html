@@ -182,6 +182,74 @@
                         </div>
                     </div>
 
+                    
+                    <!-- CompeteScan Card -->
+                    <div onclick="switchView('competescan')" class="group glass-panel p-8 rounded-3xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:border-orange-500/50 relative overflow-hidden">
+                         <div class="absolute -right-10 -top-10 w-64 h-64 bg-orange-600/20 rounded-full blur-3xl group-hover:bg-orange-600/30 transition"></div>
+                        
+                        <div class="relative z-10">
+                             <div class="flex justify-between items-start mb-8">
+                                <div class="w-16 h-16 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20 text-3xl">
+                                    <svg class="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </div>
+                                <span class="px-3 py-1 rounded-full bg-orange-500/10 text-orange-400 text-xs font-mono border border-orange-500/20">v1.0.0</span>
+                            </div>
+                            
+                            <h3 class="text-2xl font-bold text-white mb-2 group-hover:text-orange-400 transition">CompeteScan AI</h3>
+                            <p class="text-slate-400 mb-8 font-medium">Deep competitive analysis of websites, pricing models, and strategy.</p>
+                             
+                            <div class="grid grid-cols-2 gap-3 mb-8">
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Pricing Analysis</div>
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">SWOT Report</div>
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Growth Experiments</div>
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Business Model</div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between border-t border-white/10 pt-6">
+                                <div class="flex flex-col">
+                                    <span class="text-xs text-slate-500 uppercase font-bold">Fixed Cost</span>
+                                    <span class="text-orange-400 font-mono">0.0010 MON</span>
+                                </div>
+                                <button class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center group-hover:rotate-45 transition">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- x402 Scraper Card (NEW - x402 Protocol) -->
+                    <div onclick="switchView('scraper-x402')" class="group glass-panel p-8 rounded-3xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:border-cyan-500/50 relative overflow-hidden">
+                         <div class="absolute -right-10 -top-10 w-64 h-64 bg-cyan-600/20 rounded-full blur-3xl group-hover:bg-cyan-600/30 transition"></div>
+                        
+                        <div class="relative z-10">
+                             <div class="flex justify-between items-start mb-8">
+                                <div class="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center border border-cyan-500/20 text-3xl">
+                                    <svg class="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                                <span class="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-mono border border-cyan-500/20">x402</span>
+                            </div>
+                            
+                            <h3 class="text-2xl font-bold text-white mb-2 group-hover:text-cyan-400 transition">x402 Scraper <span class="text-xs font-normal bg-cyan-500/20 px-2 py-0.5 rounded text-cyan-300 ml-2">NEW</span></h3>
+                            <p class="text-slate-400 mb-8 font-medium">Pay-per-request scraper using x402 protocol. Automatic wallet signature flow.</p>
+                             
+                            <div class="grid grid-cols-2 gap-3 mb-8">
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Auto Payment</div>
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Thirdweb SDK</div>
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">HTTP 402 Flow</div>
+                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Signature Auth</div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between border-t border-white/10 pt-6">
+                                <div class="flex flex-col">
+                                    <span class="text-xs text-slate-500 uppercase font-bold">x402 Price</span>
+                                    <span class="text-cyan-400 font-mono">0.0001 MON</span>
+                                </div>
+                                <button class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center group-hover:rotate-45 transition">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -243,6 +311,92 @@
                 </div>
             </div>
 
+            <!-- VIEW: COMPETESCAN FORM -->
+            <div id="view-competescan" class="max-w-3xl mx-auto hidden animate-fade-in py-20">
+                <button onclick="switchView('home')" class="mb-8 flex items-center gap-2 text-slate-500 hover:text-white transition text-sm font-mono">
+                    ← // BACK_TO_ROOT
+                </button>
+                
+                <div class="glass-panel p-10 rounded-3xl border border-white/10 relative overflow-hidden group">
+                     <div class="absolute -right-20 -top-20 w-64 h-64 bg-orange-600/10 rounded-full blur-[80px] -z-10 group-hover:bg-orange-600/20 transition duration-700"></div>
+
+                    <h2 class="text-3xl font-bold text-white mb-8 flex items-center gap-4">
+                        <span class="text-orange-500">COMPETESCAN_AI</span> // TARGET
+                    </h2>
+
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Competitor Website URL</label>
+                    <div class="relative group mb-10">
+                        <div class="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-amber-600 rounded-xl blur opacity-20 group-hover:opacity-60 transition duration-500"></div>
+                        <input type="text" id="competeUrlInput" placeholder="https://competitor.com" class="relative w-full px-6 py-4 bg-black border border-white/10 rounded-xl focus:outline-none text-white font-mono placeholder-slate-700">
+                    </div>
+
+                    <button id="btn-run-compete" onclick="runCompeteScan()" class="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-600 text-white font-bold rounded-xl shadow-lg hover:shadow-orange-500/40 hover:scale-[1.01] transition flex items-center justify-center gap-2">
+                        <span>Scan & Analyze</span>
+                         <span class="bg-black/20 px-2 py-0.5 rounded text-xs font-mono">0.0010 MON</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW: x402 SCRAPER FORM -->
+            <div id="view-scraper-x402" class="max-w-3xl mx-auto hidden animate-fade-in py-20">
+                <button onclick="switchView('home')" class="mb-8 flex items-center gap-2 text-slate-500 hover:text-white transition text-sm font-mono">
+                    ← // BACK_TO_ROOT
+                </button>
+                
+                <div class="glass-panel p-10 rounded-3xl border border-cyan-500/30 relative overflow-hidden group">
+                     <div class="absolute -right-20 -top-20 w-64 h-64 bg-cyan-600/10 rounded-full blur-[80px] -z-10 group-hover:bg-cyan-600/20 transition duration-700"></div>
+
+                    <div class="flex items-center gap-4 mb-8">
+                        <div class="w-12 h-12 bg-cyan-500/10 rounded-2xl flex items-center justify-center border border-cyan-500/20">
+                            <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-white flex items-center gap-3">
+                                <span class="text-cyan-400">x402_SCRAPER</span>
+                                <span class="text-xs font-normal bg-cyan-500/20 px-2 py-1 rounded text-cyan-300 border border-cyan-500/30">HTTP 402 Protocol</span>
+                            </h2>
+                            <p class="text-slate-500 text-sm font-mono mt-1">Powered by Thirdweb wrapFetchWithPayment</p>
+                        </div>
+                    </div>
+
+                    <!-- How it works -->
+                    <div class="bg-black/40 rounded-xl p-4 mb-8 border border-cyan-500/10">
+                        <p class="text-xs text-cyan-400 font-bold uppercase tracking-widest mb-3">x402 Protocol Flow</p>
+                        <div class="flex items-center gap-2 text-sm text-slate-400">
+                            <span class="bg-cyan-500/20 text-cyan-300 px-2 py-1 rounded font-mono text-xs">1. Request</span>
+                            <span class="text-slate-600">→</span>
+                            <span class="bg-red-500/20 text-red-300 px-2 py-1 rounded font-mono text-xs">2. 402 Response</span>
+                            <span class="text-slate-600">→</span>
+                            <span class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded font-mono text-xs">3. Wallet Sign</span>
+                            <span class="text-slate-600">→</span>
+                            <span class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded font-mono text-xs">4. Auto Retry</span>
+                        </div>
+                    </div>
+
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Target URL to Scrape</label>
+                    <div class="relative group mb-8">
+                        <div class="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl blur opacity-20 group-hover:opacity-60 transition duration-500"></div>
+                        <input type="text" id="scraperX402UrlInput" placeholder="https://example.com" class="relative w-full px-6 py-4 bg-black border border-white/10 rounded-xl focus:outline-none text-white font-mono placeholder-slate-700">
+                    </div>
+
+                    <!-- Console Output -->
+                    <div id="x402-console" class="bg-black/60 rounded-xl p-4 mb-8 border border-slate-800 max-h-40 overflow-y-auto hidden">
+                        <p class="text-xs font-mono text-slate-500">// x402 Protocol Console</p>
+                        <div id="x402-console-log" class="text-xs font-mono text-slate-400 space-y-1 mt-2"></div>
+                    </div>
+
+                    <button id="btn-run-scraper-x402" onclick="runScraperX402()" class="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-cyan-500/40 hover:scale-[1.01] transition flex items-center justify-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        <span>Execute with x402 Payment</span>
+                        <span class="bg-black/20 px-2 py-0.5 rounded text-xs font-mono">0.0001 MON</span>
+                    </button>
+                    
+                    <p class="text-center text-xs text-slate-600 mt-4 font-mono">
+                        Payment handled automatically via Thirdweb SDK • No manual tx required
+                    </p>
+                </div>
+            </div>
+
             <!-- LOADING OVERLAY -->
             <div id="loading-overlay" class="absolute inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center backdrop-blur-sm">
                 <div class="relative">
@@ -264,7 +418,7 @@
                         <h2 class="text-lg font-bold flex items-center gap-2 text-white font-mono">
                             <span class="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]"></span> OUTPUT_STREAM
                         </h2>
-                        <button class="text-xs text-slate-400 hover:text-white uppercase font-bold tracking-wider">Download JSON</button>
+                        <button onclick="downloadJson()" id="btn-download-json" class="text-xs text-slate-400 hover:text-white uppercase font-bold tracking-wider hidden">Download JSON</button>
                     </div>
                     <div id="results-container" class="p-8 prose prose-invert max-w-none prose-p:text-slate-300 prose-headings:text-white prose-a:text-indigo-400">
                         <!-- Content injected JS -->
@@ -331,57 +485,121 @@
     </div>
 
 <script>
-    // --- STATE ---
-    let currentGhType = 'summary';
-    let selectedAudioFile = null;
+    // ════════════════════════════════════════════════════════════════════════════
+    // WEB3.AI DASHBOARD - MAIN JAVASCRIPT
+    // ════════════════════════════════════════════════════════════════════════════
+    // Yeh script dashboard ke saare interactions handle karti hai
+    // 
+    // MAIN FEATURES:
+    // 1. View Switching    - Different pages (home, github, audio, etc.) ke beech switch karna
+    // 2. x402 Protocol     - Automatic payment flow with MetaMask
+    // 3. File Upload       - Audio file drag & drop
+    // 4. API Calls         - Backend agents ko call karna
+    // 5. Results Display   - AI analysis results dikhana
+    // ════════════════════════════════════════════════════════════════════════════
 
-    // Prices (MON)
+    // ┌──────────────────────────────────────────────────────────────────────────┐
+    // │ STATE VARIABLES - Application ki current state store karte hain          │
+    // └──────────────────────────────────────────────────────────────────────────┘
+    
+    let currentGhType = 'summary';      // GitHub analysis type (summary/architecture/issues/pr_review)
+    let selectedAudioFile = null;       // User ne jo audio file select ki (File object)
+    let activeView = 'home';            // Konsa view abhi active hai (home/github/audio/etc.)
+    let lastResultData = null;          // Last result data (download ke liye)
+
+    // ┌──────────────────────────────────────────────────────────────────────────┐
+    // │ PRICES CONFIGURATION - Har agent ki price (MON mein)                     │
+    // │ Yeh prices backend mein bhi same hain (views.py mein)                    │
+    // └──────────────────────────────────────────────────────────────────────────┘
+    
     const PRICES = {
-        'summary': '0.0002',
-        'architecture': '0.0005',
-        'issues': '0.0003',
-        'pr_review': '0.0008',
-        'audio': '0.0011'
+        'summary': '0.0002',       // GitHub Summary - Basic overview
+        'architecture': '0.0005', // GitHub Architecture - Deep code analysis
+        'issues': '0.0003',       // GitHub Issues - Bug analysis
+        'pr_review': '0.0008',    // GitHub PR Review - Code review
+        'audio': '0.0011',        // Voice Intelligence - Audio transcription
+        'competescan': '0.0010'   // CompeteScan - Competitor analysis
     };
 
+    // ┌──────────────────────────────────────────────────────────────────────────┐
+    // │ VIEW SWITCHING FUNCTION - Ek view se dusre view pe switch karta hai      │
+    // │ Views: home, github, audio, competescan, scraper-x402, results, history  │
+    // └──────────────────────────────────────────────────────────────────────────┘
+    
     function switchView(viewName) {
-        ['home', 'github', 'audio', 'results', 'history'].forEach(v => {
+        // Step 1: State update karo - konsa view active hai
+        activeView = viewName;
+        console.log(`[VIEW] Switching to: ${viewName}`);
+        
+        // Step 2: Sabhi views hide karo (hidden class add karo)
+        // forEach loop sabhi view IDs pe chalta hai
+        ['home', 'github', 'audio', 'competescan', 'scraper-x402', 'results', 'history'].forEach(v => {
             document.getElementById(`view-${v}`).classList.add('hidden');
         });
+        
+        // Step 3: Selected view show karo (hidden class remove karo)
         document.getElementById(`view-${viewName}`).classList.remove('hidden');
         
-        // Nav
+        // Step 4: Navigation menu update karo (active item highlight)
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'text-white'));
-        if(viewName === 'home') document.getElementById('nav-home').classList.add('active', 'text-white');
-        if(viewName === 'history') {
-            document.getElementById('nav-history').classList.add('active', 'text-white');
-            loadHistoryData();
+        
+        // Home button active karo
+        if(viewName === 'home') {
+            document.getElementById('nav-home').classList.add('active', 'text-white');
         }
         
-        // Init Button Text if Github
+        // History page pe special handling - data load karo
+        if(viewName === 'history') {
+            document.getElementById('nav-history').classList.add('active', 'text-white');
+            loadHistoryData();  // API se history fetch karo
+        }
+        
+        // GitHub view pe button price update karo
         if(viewName === 'github') {
             updateGithubButton();
         }
     }
 
-    function openGithubForm() { switchView('github'); }
-    function openAudioForm() { switchView('audio'); }
+    // ┌──────────────────────────────────────────────────────────────────────────┐
+    // │ QUICK VIEW OPENERS - Shortcut functions for common views                 │
+    // └──────────────────────────────────────────────────────────────────────────┘
+    
+    function openGithubForm() { switchView('github'); }  // GitHub form kholo
+    function openAudioForm() { switchView('audio'); }    // Audio form kholo
 
+    // ┌──────────────────────────────────────────────────────────────────────────┐
+    // │ GITHUB TYPE SELECTOR - Analysis type buttons handle karta hai            │
+    // │ Jab user summary/architecture/issues/pr_review click kare                │
+    // └──────────────────────────────────────────────────────────────────────────┘
+    
     function selectGhType(btn, type) {
+        console.log(`[GITHUB] Type selected: ${type}`);
+        
+        // Step 1: Sabhi buttons ko inactive banao (styling remove karo)
         document.querySelectorAll('.gh-type-btn').forEach(b => {
             b.classList.remove('active', 'border-indigo-500/50', 'bg-indigo-500/10', 'text-indigo-300');
             b.classList.add('border-white/10', 'bg-white/5', 'text-slate-400');
         });
+        
+        // Step 2: Clicked button ko active banao (styling add karo)
         btn.classList.add('active', 'border-indigo-500/50', 'bg-indigo-500/10', 'text-indigo-300');
         btn.classList.remove('border-white/10', 'bg-white/5', 'text-slate-400');
+        
+        // Step 3: State update karo
         currentGhType = type;
+        
+        // Step 4: Button price update karo
         updateGithubButton();
     }
     
+    // ┌──────────────────────────────────────────────────────────────────────────┐
+    // │ UPDATE GITHUB BUTTON - Execute button pe price dikhata hai               │
+    // └──────────────────────────────────────────────────────────────────────────┘
+    
     function updateGithubButton() {
-        const price = PRICES[currentGhType];
+        const price = PRICES[currentGhType];  // Current type ki price nikaalo
         const btn = document.getElementById('btn-run-github');
-        btn.querySelector('span:last-child').innerText = `~${price} MON`;
+        btn.querySelector('span:last-child').innerText = `~${price} MON`;  // Button pe update karo
     }
 
     // --- DRAG DROP ---
@@ -417,8 +635,10 @@
     
     // Dynamic Pricing
     function getPriceForAgent() {
-        if(selectedAudioFile) return PRICES['audio'];
-        return PRICES[currentGhType] || '0.0005';
+        if(activeView === 'audio') return PRICES['audio'];
+        if(activeView === 'competescan') return PRICES['competescan'];
+        if(activeView === 'github') return PRICES[currentGhType];
+        return '0.0005';
     }
 
     async function processPayment(statusFn) {
@@ -462,54 +682,126 @@
         return tx.hash;
     }
 
-    // --- API CALLS ---
+    // ════════════════════════════════════════════════════════════════════════════
+    // x402 API CALL FUNCTIONS - Sabhi AI agents ko call karne ke functions
+    // ════════════════════════════════════════════════════════════════════════════
+    // Yeh functions x402Fetch use karte hain jo automatic payment handle karta hai
+    // Flow: Button Click → x402Fetch → 402 Response → MetaMask → Retry → Result
+    // ════════════════════════════════════════════════════════════════════════════
+
+    // ┌──────────────────────────────────────────────────────────────────────────┐
+    // │ GITHUB AGENT - Repository analysis karta hai                             │
+    // │ Endpoint: /api/x402/github/                                              │
+    // │ Price: 0.0005 MON                                                        │
+    // └──────────────────────────────────────────────────────────────────────────┘
+    
     async function runGithubAgent() {
+        // Step 1: Input validation - URL check karo
         const url = document.getElementById('repoUrlInput').value;
         if (!url) return showToast("Enter Repo URL");
         
-        setLoading(true, "Initializing Github Agent");
+        console.log(`📦 [GITHUB] Starting analysis for: ${url}`);
+        
+        // Step 2: Loading state show karo
+        setLoading(true, "Initializing x402 GitHub Agent");
+        
         try {
-            const hash = await processPayment((msg) => updateLoadingText(msg));
-            updateLoadingText("Agent Analyzing Codebase...");
+            updateLoadingText("🔷 Requesting API (x402 Flow)...");
             
-            const res = await fetch('/api/github/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-                body: JSON.stringify({ repo_url: url, tx_hash: hash, agent_type: currentGhType })
+            // Step 3: x402Fetch call - yeh automatically 402 handle karega
+            // window.x402Fetch = globally available x402 function (module se)
+            const res = await window.x402Fetch('/api/x402/github/', {
+                method: 'POST',                                        // POST request
+                headers: { 
+                    'Content-Type': 'application/json',                // JSON body
+                    'X-CSRFToken': getCookie('csrftoken')              // Django CSRF protection
+                },
+                body: JSON.stringify({ 
+                    repo_url: url,           // GitHub repository URL
+                    agent_type: currentGhType // Analysis type (summary/architecture/etc.)
+                })
             });
+            
+            // Step 4: Response parse karo
+            const data = await res.json();
+            if(!res.ok) throw new Error(data.error);  // Error check
+            
+            console.log(`✅ [GITHUB] Analysis complete!`);
+            
+            // Step 5: Results dikhao
+            showResults(data.summary);
+            
+        } catch (e) {
+            console.error(`❌ [GITHUB] Error:`, e);
+            showToast(e.message);
+        } finally {
+            setLoading(false);  // Loading hide karo
+        }
+    }
+
+    // ┌──────────────────────────────────────────────────────────────────────────┐
+    // │ AUDIO/VOICE AGENT - Audio transcription + meeting analysis               │
+    // │ Endpoint: /api/x402/audio/                                               │
+    // │ Price: 0.0011 MON                                                        │
+    // │ Special: FormData use karta hai (file upload ke liye)                    │
+    // └──────────────────────────────────────────────────────────────────────────┘
+    
+    async function runAudioAgent() {
+        // Step 1: File selected hai ya nahi check karo
+        if (!selectedAudioFile) return;
+        
+        console.log(`🎙️ [AUDIO] Starting transcription for: ${selectedAudioFile.name}`);
+        
+        // Step 2: Loading show karo
+        setLoading(true, "Initializing x402 Voice Agent");
+        
+        try {
+            updateLoadingText("🔷 Requesting API (x402 Flow)...");
+            
+            // Step 3: FormData banao (file upload ke liye)
+            // FormData multipart form data bhejta hai (files ke liye required)
+            const formData = new FormData();
+            formData.append('audio_file', selectedAudioFile);  // Audio file add karo
+            
+            // Step 4: x402FetchFormData use karo (file uploads ke liye special function)
+            // Regular x402Fetch FormData ke saath kaam nahi karta
+            const res = await window.x402FetchFormData('/api/x402/audio/', formData);
+            
+            // Step 5: Response parse karo
             const data = await res.json();
             if(!res.ok) throw new Error(data.error);
+            
+            console.log(`✅ [AUDIO] Transcription complete!`);
+            
+            // Step 6: Audio results dikhao (tabs wala view)
+            showAudioResults(data);
 
-            showResults(data.summary);
         } catch (e) {
+            console.error(`❌ [AUDIO] Error:`, e);
             showToast(e.message);
         } finally {
             setLoading(false);
         }
     }
 
-    async function runAudioAgent() {
-        if (!selectedAudioFile) return;
+    async function runCompeteScan() {
+        const url = document.getElementById('competeUrlInput').value;
+        if (!url) return showToast("Enter Website URL");
         
-        setLoading(true, "Initializing Voice Node");
+        setLoading(true, "Initializing x402 CompeteScan");
         try {
-            const hash = await processPayment((msg) => updateLoadingText(msg));
-            updateLoadingText("ElevenLabs Transcription...");
+            updateLoadingText("Requesting API (x402 Flow)...");
             
-            const formData = new FormData();
-            formData.append('audio_file', selectedAudioFile);
-            formData.append('tx_hash', hash);
-            
-            const res = await fetch('/api/audio/', {
+            // Use x402 endpoint - payment handled automatically
+            const res = await window.x402Fetch('/api/x402/competescan/', {
                 method: 'POST',
-                 headers: { 'X-CSRFToken': getCookie('csrftoken') },
-                body: formData
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({ url: url })
             });
             const data = await res.json();
             if(!res.ok) throw new Error(data.error);
-            
-            showAudioResults(data);
 
+            showCompeteScanResults(data);
         } catch (e) {
             showToast(e.message);
         } finally {
@@ -519,6 +811,7 @@
 
     function showResults(contentHTML) {
         document.getElementById('results-container').innerHTML = contentHTML;
+        document.getElementById('btn-download-json').classList.add('hidden');
         switchView('results');
     }
 
@@ -557,6 +850,91 @@
             </div>
         `;
         document.getElementById('results-container').innerHTML = tabsHtml;
+        switchView('results');
+    }
+
+    function showCompeteScanResults(data) {
+        lastResultData = data;
+        document.getElementById('btn-download-json').classList.remove('hidden');
+
+        // Summary
+        const insightsHtml = (data.summary?.key_insights || []).map(i => 
+            `<span class="px-3 py-1 rounded-lg bg-orange-500/10 text-orange-300 text-xs border border-orange-500/20 mr-2 mb-2 inline-block">${i}</span>`
+        ).join('');
+
+        // Pricing Plans
+        const plans = (data.pricing?.plans || []).map(p => 
+            `<div class="flex justify-between border-b border-white/5 pb-2 mb-2 last:border-0 last:mb-0 last:pb-0"><span class="text-white font-medium">${p.name}</span> <span class="text-orange-400 font-mono">${p.price}</span></div>`
+        ).join('');
+
+        // SWOT
+        const strengths = (data.strengths_weaknesses?.strengths || []).map(s => `<li class="text-slate-300 text-sm mb-1">${s}</li>`).join('');
+        const weaknesses = (data.strengths_weaknesses?.weaknesses || []).map(s => `<li class="text-slate-300 text-sm mb-1">${s}</li>`).join('');
+
+        // Experiments
+        const expHtml = (data.growth_experiments || []).map(ex => `
+            <div class="p-4 bg-white/5 rounded-xl border border-white/5 flex gap-4 items-start mb-3">
+                <div class="mt-1.5 w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_5px_blue] flex-shrink-0"></div>
+                <div>
+                    <h5 class="text-slate-200 text-sm font-bold mb-1">${ex.experiment}</h5>
+                     <p class="text-slate-400 text-xs mb-1">${ex.details || ''}</p>
+                    <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider bg-white/5 px-2 py-0.5 rounded">Impact: ${ex.impact}</span>
+                </div>
+            </div>
+        `).join('');
+
+        const html = `
+            <div class="space-y-8 animate-fade-in">
+                <!-- Header -->
+                <div class="glass-panel p-8 rounded-2xl border-l-4 border-orange-500">
+                    <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        Strategic Summary
+                    </h3>
+                    <p class="text-lg text-slate-200 mb-4 font-medium">${data.summary?.one_line || "Analysis Complete"}</p>
+                    <div class="">${insightsHtml}</div>
+                </div>
+
+                <!-- 2 Col Grid -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="glass-panel p-6 rounded-2xl bg-white/[0.02]">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase mb-4 tracking-widest flex items-center gap-2">Business Overview</h4>
+                        <div class="space-y-2 text-sm">
+                            <p><span class="text-slate-500 w-16 inline-block">Type:</span> <span class="text-slate-300">${data.business_overview?.type || '-'}</span></p>
+                            <p><span class="text-slate-500 w-16 inline-block">Region:</span> <span class="text-slate-300">${data.business_overview?.region || '-'}</span></p>
+                            <p><span class="text-slate-500 w-16 inline-block">ICP:</span> <span class="text-slate-300">${data.business_overview?.icp || '-'}</span></p>
+                            <p class="mt-4 text-slate-400 italic">"${data.business_overview?.pitch || 'No pitch detected'}"</p>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-6 rounded-2xl bg-white/[0.02]">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase mb-4 tracking-widest flex items-center gap-2">Pricing Model: <span class="text-white ml-auto border border-white/10 px-2 rounded">${data.pricing?.model || '-'}</span></h4>
+                        <div class="bg-black/20 p-4 rounded-xl border border-white/5 space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                            ${plans || '<p class="text-slate-500 text-sm">No specific plans found.</p>'}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SWOT -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="glass-panel p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5">
+                        <h4 class="text-xs font-bold text-emerald-400 uppercase mb-4 tracking-widest">Strengths</h4>
+                        <ul class="list-disc list-inside space-y-1">${strengths}</ul>
+                    </div>
+                    <div class="glass-panel p-6 rounded-2xl border border-red-500/20 bg-red-500/5">
+                        <h4 class="text-xs font-bold text-red-400 uppercase mb-4 tracking-widest">Weaknesses</h4>
+                        <ul class="list-disc list-inside space-y-1">${weaknesses}</ul>
+                    </div>
+                </div>
+
+                <!-- Experiments -->
+                <div class="glass-panel p-8 rounded-2xl">
+                    <h3 class="text-xl font-bold text-white mb-6">🚀 Recommended Growth Experiments</h3>
+                    <div class="">${expHtml}</div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('results-container').innerHTML = html;
         switchView('results');
     }
 
@@ -657,6 +1035,8 @@
             
             if(data.category === 'AUDIO') {
                 showAudioResults(data.output);
+            } else if (data.category === 'COMPETESCAN') {
+                showCompeteScanResults(data.output);
             } else {
                 showResults(data.output.summary || JSON.stringify(data.output));
             }
@@ -716,6 +1096,17 @@
         });
     }
 
+    function downloadJson() {
+        if(!lastResultData) return;
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(lastResultData, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "competescan_report.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
     // Init Balance load
      (async () => {
         try {
@@ -730,6 +1121,411 @@
         } catch(e) {}
     })();
 
+</script>
+
+<!-- ════════════════════════════════════════════════════════════════════════════ -->
+<!-- x402 PROTOCOL MODULE - Thirdweb SDK Integration                              -->
+<!-- ════════════════════════════════════════════════════════════════════════════ -->
+<!-- 
+YEH MODULE x402 PAYMENT PROTOCOL IMPLEMENT KARTA HAI
+
+x402 PROTOCOL KYA HAI?
+- HTTP 402 = "Payment Required" status code
+- Server 402 return karta hai jab payment chahiye
+- Client automatically payment karta hai aur retry karta hai
+
+FLOW DIAGRAM:
+┌─────────────────────────────────────────────────────────────────────┐
+│ 1. fetch('/api/x402/scraper/')     → Server ko request bhejo       │
+│ 2. Server returns HTTP 402         ← Payment information milti hai  │
+│ 3. x402Fetch sees 402              → Payment requirements parse karo│
+│ 4. MetaMask popup opens            → User ko payment confirm karo   │
+│ 5. User signs transaction          → Blockchain pe tx broadcast     │
+│ 6. fetch (with x-payment header)   → Same request, ab payment ke sath│
+│ 7. Server processes request        ← Data return hoti hai           │
+└─────────────────────────────────────────────────────────────────────┘
+-->
+
+<script type="module">
+    // ════════════════════════════════════════════════════════════════════════════
+    // x402 PROTOCOL MODULE - MAIN IMPLEMENTATION
+    // ════════════════════════════════════════════════════════════════════════════
+    // Yeh ES6 module hai (type="module" attribute dekho)
+    // Isliye import/export use kar sakte hain
+    // ════════════════════════════════════════════════════════════════════════════
+    
+    // ┌──────────────────────────────────────────────────────────────────────────┐
+    // │ THIRDWEB IMPORTS - Thirdweb SDK libraries import karo                    │
+    // │ ESM CDN se directly browser mein import hota hai (no npm needed)         │
+    // └──────────────────────────────────────────────────────────────────────────┘
+    
+    import { createThirdwebClient } from "https://esm.sh/thirdweb@5";
+    import { createWallet } from "https://esm.sh/thirdweb@5/wallets";
+    
+    // ┌──────────────────────────────────────────────────────────────────────────┐
+    // │ THIRDWEB CLIENT ID - Yeh Thirdweb Dashboard se lena hoga                 │
+    // │ Free signup: https://thirdweb.com/dashboard                              │
+    // │ Client ID = API key jaisa hai (identifies your app)                      │
+    // └──────────────────────────────────────────────────────────────────────────┘
+    
+    const THIRDWEB_CLIENT_ID = "YOUR_THIRDWEB_CLIENT_ID"; // TODO: Apna Client ID daalo
+    
+    // ┌──────────────────────────────────────────────────────────────────────────┐
+    // │ x402 CONFIGURATION - Blockchain aur payment settings                     │
+    // │ Yeh settings backend (views.py) se match honi chahiye                    │
+    // └──────────────────────────────────────────────────────────────────────────┘
+    
+    const X402_CONFIG = {
+        chainId: 10143,                                        // Monad Testnet chain ID
+        paymentAddress: "0x9497FE4B4ECA41229b9337abAEbCC91eCc7be23B",  // Server wallet
+        rpcUrl: "https://testnet-rpc.monad.xyz"                // Blockchain RPC URL
+    };
+    
+    console.log("🔧 [x402] Configuration loaded:", X402_CONFIG);
+    
+    // ┌──────────────────────────────────────────────────────────────────────────┐
+    // │ THIRDWEB INITIALIZATION - Client aur wallet setup karo                   │
+    // └──────────────────────────────────────────────────────────────────────────┘
+    
+    let thirdwebClient = null;    // Thirdweb client instance
+    let metamaskWallet = null;    // MetaMask wallet instance
+    
+    try {
+        // Thirdweb client banao (API calls ke liye)
+        thirdwebClient = createThirdwebClient({ 
+            clientId: THIRDWEB_CLIENT_ID 
+        });
+        
+        // MetaMask wallet initialize karo
+        // "io.metamask" = MetaMask ka identifier hai
+        metamaskWallet = createWallet("io.metamask");
+        console.log("✅ [x402] Thirdweb client initialized successfully");
+    } catch (e) {
+        console.error("❌ [x402] Failed to initialize Thirdweb:", e);
+    }
+    
+    // ┌──────────────────────────────────────────────────────────────────────────┐
+    // │ x402 CONSOLE LOGGING - UI console mein colorful logs dikhata hai         │
+    // │ Scraper page pe ek console box hai jisme ye logs dikhte hain             │
+    // └──────────────────────────────────────────────────────────────────────────┘
+    
+    function x402Log(message, type = 'info') {
+        // UI console elements dhundho
+        const consoleEl = document.getElementById('x402-console');     // Console container
+        const logEl = document.getElementById('x402-console-log');     // Log messages area
+        
+        // Agar elements hain toh UI mein log karo
+        if (consoleEl && logEl) {
+            // Console visible banao
+            consoleEl.classList.remove('hidden');
+            
+            // Color mapping - message type ke hisaab se color
+            const colors = {
+                'info': 'text-slate-400',      // Gray - normal info
+                'success': 'text-emerald-400', // Green - success
+                'error': 'text-red-400',       // Red - error
+                'payment': 'text-cyan-400',    // Cyan - payment related
+                '402': 'text-amber-400'        // Yellow/Orange - 402 status
+            };
+            
+            // Timestamp add karo
+            const timestamp = new Date().toLocaleTimeString();
+            
+            // HTML append karo with color
+            logEl.innerHTML += `<p class="${colors[type] || 'text-slate-400'}">[${timestamp}] ${message}</p>`;
+            
+            // Auto scroll to bottom
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+        
+        // Browser console mein bhi log karo (debugging ke liye)
+        console.log(`🔷 [x402] ${message}`);
+    }
+    
+    // ┌──────────────────────────────────────────────────────────────────────────┐
+    // │ x402 FETCH WRAPPER - Main payment handling function                       │
+    // │ Yeh function automatic 402 detection aur payment karta hai                │
+    // │ Normal fetch ki jagah isko use karo for paid APIs                         │
+    // └──────────────────────────────────────────────────────────────────────────┘
+    /*
+    COMPLETE FLOW:
+    ══════════════
+    1. fetch() → Server ko normal request bhejo
+    2. 402?    → Agar 402 aaya toh payment requirements parse karo
+    3. MetaMask → User ko payment approve karwao
+    4. Wait    → Transaction confirm hone ka wait karo
+    5. Retry   → Same request x-payment header ke saath
+    6. Return  → Final response return karo
+    */
+    
+    async function x402Fetch(url, options = {}) {
+        // ═══════════════════════════════════════════════════════════════════
+        // STEP 1: Initial Request - Pehle bina payment ke try karo
+        // ═══════════════════════════════════════════════════════════════════
+        x402Log("🚀 Starting x402 request to " + url, 'info');
+        
+        const response = await fetch(url, options);  // Normal fetch call
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // STEP 2: Check for 402 - Kya payment chahiye?
+        // ═══════════════════════════════════════════════════════════════════
+        if (response.status === 402) {
+            // 🔴 402 aaya! Payment Required!
+            x402Log("⚠️ HTTP 402 - Payment Required!", '402');
+            
+            // Response body se payment details nikaalo
+            const paymentData = await response.json();        // JSON parse
+            const requirements = paymentData.paymentRequirements;  // Requirements object
+            
+            // Console mein payment info dikhao
+            x402Log(`💵 Amount: ${requirements.amount} ${requirements.asset}`, 'payment');
+            x402Log(`🔗 Chain: ${requirements.chain} (${requirements.chainId})`, 'payment');
+            x402Log(`👛 Recipient: ${requirements.payTo.substring(0, 10)}...`, 'payment');
+            
+            // ═══════════════════════════════════════════════════════════════
+            // STEP 3: MetaMask Payment - Wallet se paisa bhejo
+            // ═══════════════════════════════════════════════════════════════
+            x402Log("🔐 Opening MetaMask wallet...", 'payment');
+            
+            // Check karo MetaMask installed hai ya nahi
+            if (!window.ethereum) {
+                throw new Error("❌ MetaMask not found! Please install MetaMask extension.");
+            }
+            
+            // Ensure correct network
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0x' + parseInt(requirements.chainId).toString(16) }],
+                });
+            } catch (switchError) {
+                if (switchError.code === 4902) {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: '0x' + parseInt(requirements.chainId).toString(16),
+                            chainName: 'Monad Testnet',
+                            rpcUrls: ['https://testnet-rpc.monad.xyz'],
+                            nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
+                            blockExplorerUrls: ["https://testnet.monadexplorer.com/"]
+                        }],
+                    });
+                }
+            }
+            
+            // Get provider and signer
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            const signer = provider.getSigner();
+            
+            // Send the payment transaction
+            x402Log("Sending payment transaction...", 'payment');
+            
+            const tx = await signer.sendTransaction({
+                to: requirements.payTo,
+                value: ethers.utils.parseEther(requirements.amount)
+            });
+            
+            x402Log(`Transaction sent: ${tx.hash.substring(0, 20)}...`, 'success');
+            x402Log("Waiting for confirmation...", 'info');
+            
+            await tx.wait();
+            x402Log("Transaction confirmed!", 'success');
+            
+            // Step 4: Retry the request with the payment header
+            x402Log("Retrying request with x-payment header...", 'info');
+            
+            const retryOptions = {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    'x-payment': tx.hash // Include tx hash as payment proof
+                }
+            };
+            
+            const retryResponse = await fetch(url, retryOptions);
+            x402Log("Request completed successfully!", 'success');
+            
+            return retryResponse;
+        }
+        
+        // If no 402, return the original response
+        return response;
+    }
+    
+    // Make x402Fetch available globally
+    window.x402Fetch = x402Fetch;
+    
+    // x402 Fetch for FormData (file uploads)
+    // Handles 402 -> Payment -> Retry with multipart form data
+    window.x402FetchFormData = async function(url, formData) {
+        console.log("[x402] FormData request to " + url);
+        
+        // Step 1: Make initial request
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            body: formData
+        });
+        
+        // Step 2: Check if we got a 402 Payment Required
+        if (response.status === 402) {
+            console.log("[x402] FormData 402 - Payment Required!");
+            
+            const paymentData = await response.json();
+            const requirements = paymentData.paymentRequirements;
+            
+            if (!window.ethereum) {
+                throw new Error("MetaMask not found");
+            }
+            
+            // Switch network
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0x' + parseInt(requirements.chainId).toString(16) }],
+                });
+            } catch (switchError) {
+                if (switchError.code === 4902) {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: '0x' + parseInt(requirements.chainId).toString(16),
+                            chainName: 'Monad Testnet',
+                            rpcUrls: ['https://testnet-rpc.monad.xyz'],
+                            nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
+                            blockExplorerUrls: ["https://testnet.monadexplorer.com/"]
+                        }],
+                    });
+                }
+            }
+            
+            // Send payment
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            const signer = provider.getSigner();
+            
+            const tx = await signer.sendTransaction({
+                to: requirements.payTo,
+                value: ethers.utils.parseEther(requirements.amount)
+            });
+            
+            console.log("[x402] Payment tx:", tx.hash);
+            await tx.wait();
+            console.log("[x402] Payment confirmed!");
+            
+            // Step 3: Retry with x-payment header (need to recreate FormData for file upload)
+            const retryResponse = await fetch(url, {
+                method: 'POST',
+                headers: { 
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'x-payment': tx.hash
+                },
+                body: formData
+            });
+            
+            return retryResponse;
+        }
+        
+        return response;
+    };
+    
+    // Make the x402 scraper function available globally
+    window.runScraperX402 = async function() {
+        const url = document.getElementById('scraperX402UrlInput').value;
+        if (!url) {
+            showToast("Enter a URL to scrape");
+            return;
+        }
+        
+        const btn = document.getElementById('btn-run-scraper-x402');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="animate-spin">⚡</span> Processing x402 Flow...';
+        
+        // Clear previous console
+        document.getElementById('x402-console-log').innerHTML = '';
+        
+        try {
+            x402Log("Starting x402 Web Scraper Agent", 'info');
+            x402Log(`Target URL: ${url}`, 'info');
+            
+            // Use our x402 fetch wrapper
+            const response = await x402Fetch('/api/x402/scraper/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ url: url })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Request failed');
+            }
+            
+            x402Log("Scraping complete!", 'success');
+            
+            // Show results
+            showX402Results(data);
+            
+        } catch (e) {
+            x402Log(`Error: ${e.message}`, 'error');
+            showToast(e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <span>Execute with x402 Payment</span>
+                <span class="bg-black/20 px-2 py-0.5 rounded text-xs font-mono">0.0001 MON</span>
+            `;
+        }
+    };
+    
+    // Helper to show x402 results
+    function showX402Results(data) {
+        const container = document.getElementById('results-container');
+        container.innerHTML = `
+            <div class="space-y-6 animate-fade-in">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 bg-cyan-500/20 rounded-2xl flex items-center justify-center border border-cyan-500/30">
+                        <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white">x402 Payment Successful</h3>
+                        <p class="text-sm text-slate-500 font-mono">Scraping completed via x402 protocol</p>
+                    </div>
+                </div>
+                
+                <div class="glass-panel p-6 rounded-xl border border-cyan-500/20">
+                    <p class="text-xs text-cyan-400 font-bold uppercase tracking-widest mb-3">Scraped URL</p>
+                    <p class="text-white font-mono text-sm break-all">${data.data?.url || 'N/A'}</p>
+                </div>
+                
+                <div class="glass-panel p-6 rounded-xl">
+                    <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-3">Content Length</p>
+                    <p class="text-2xl font-bold text-white">${data.data?.content_length?.toLocaleString() || 0} <span class="text-sm text-slate-500 font-normal">characters</span></p>
+                </div>
+                
+                <div class="glass-panel p-6 rounded-xl">
+                    <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-3">Content Preview</p>
+                    <pre class="text-sm text-slate-300 whitespace-pre-wrap font-mono max-h-80 overflow-y-auto bg-black/30 p-4 rounded-lg">${escapeHtml(data.data?.preview || 'No content')}</pre>
+                </div>
+            </div>
+        `;
+        
+        switchView('results');
+    }
+    
+    // HTML escape helper
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    console.log("[x402] x402 Protocol module loaded successfully");
 </script>
 </body>
 </html>

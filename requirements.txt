@@ -3,3 +3,4 @@ eth-account>=0.8.0
 google-genai
 requests
 web3
+beautifulsoup4

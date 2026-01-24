@@ -1,0 +1,275 @@
+{% extends 'payment/base.html' %} 
+<!-- Reusing Payment/Base for Sidebar/Layout or just create standalone? 
+Dashboard.html is not extending anything. It's a full file.
+I will create a standalone file similar to dashboard.html but simplified for this agent.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CompeteScan AI | Web3.AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #050505; 
+            background-image: linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: #E2E8F0;
+        }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .glass-panel {
+            background: rgba(20, 20, 25, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-10 px-4">
+
+    <!-- Nav -->
+    <nav class="fixed top-0 left-0 right-0 p-6 flex justify-between items-center z-50 bg-black/50 backdrop-blur-md border-b border-white/5">
+        <div class="flex items-center gap-3">
+             <div class="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-orange-500/30">CS</div>
+            <a href="/dashboard/" class="text-xl font-bold tracking-tight text-white hover:text-orange-400 transition">Web3.AI <span class="text-slate-500">/ CompeteScan</span></a>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-slate-400 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                Monad Testnet
+            </div>
+            <button id="connectBtn" onclick="connectWallet()" class="text-sm font-bold text-white bg-white/10 px-4 py-2 rounded-lg hover:bg-white/20 transition">
+                Connect Wallet
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="w-full max-w-5xl mt-20 animate-fade-in">
+        
+        <header class="mb-12 text-center">
+            <h1 class="text-5xl font-extrabold text-white mb-4 tracking-tight">Competitive <span class="text-orange-500">Intelligence</span></h1>
+            <p class="text-slate-400 text-lg">Deep scan websites to extract pricing, strategy, and growth opportunities.</p>
+        </header>
+
+        <!-- Input Section -->
+        <div class="glass-panel p-8 rounded-2xl mb-12 relative overflow-hidden group">
+            <div class="absolute -right-20 -top-20 w-64 h-64 bg-orange-600/10 rounded-full blur-[80px] -z-10 group-hover:bg-orange-600/20 transition duration-700"></div>
+
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Competitor Website URL</label>
+            <div class="flex flex-col md:flex-row gap-4">
+                <input type="text" id="urlInput" placeholder="e.g. https://competitor.com" class="flex-1 bg-black/40 border border-white/10 rounded-xl px-6 py-4 text-white focus:outline-none focus:border-orange-500 transition font-mono text-sm">
+                
+                <button id="runBtn" onclick="runAnalysis()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl px-8 py-4 shadow-lg shadow-orange-500/20 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span>Scan Now</span>
+                    <span class="bg-black/20 text-white/90 text-xs py-1 px-2 rounded font-mono">0.0010 MON</span>
+                </button>
+            </div>
+            <p id="statusMsg" class="mt-4 text-sm text-slate-400 font-mono hidden">Initializing...</p>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsArea" class="hidden space-y-8">
+            
+            <!-- Summary Card -->
+            <div class="glass-panel p-8 rounded-2xl border-l-4 border-orange-500">
+                <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    Strategic Summary
+                </h3>
+                <p id="res-summary-line" class="text-lg text-slate-200 mb-4 font-medium"></p>
+                <div id="res-key-insights" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <!-- Grid: Biz & Pricing -->
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h4 class="text-sm font-bold text-slate-500 uppercase mb-4 tracking-widest">Business Overview</h4>
+                    <div id="res-biz" class="space-y-3 text-sm text-slate-300"></div>
+                </div>
+                 <div class="glass-panel p-6 rounded-2xl">
+                    <h4 class="text-sm font-bold text-slate-500 uppercase mb-4 tracking-widest">Pricing Model</h4>
+                    <div id="res-pricing" class="space-y-3 text-sm text-slate-300"></div>
+                </div>
+            </div>
+
+            <!-- Grid: SWOTish -->
+            <div class="grid md:grid-cols-2 gap-8">
+                 <div class="glass-panel p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5">
+                    <h4 class="text-sm font-bold text-emerald-400 uppercase mb-4 tracking-widest">Strengths</h4>
+                    <ul id="res-strengths" class="list-disc list-inside space-y-1 text-sm text-slate-300"></ul>
+                </div>
+                 <div class="glass-panel p-6 rounded-2xl border border-red-500/20 bg-red-500/5">
+                    <h4 class="text-sm font-bold text-red-400 uppercase mb-4 tracking-widest">Weaknesses</h4>
+                    <ul id="res-weaknesses" class="list-disc list-inside space-y-1 text-sm text-slate-300"></ul>
+                </div>
+            </div>
+
+            <!-- Growth Experiments -->
+            <div class="glass-panel p-8 rounded-2xl">
+                <h3 class="text-xl font-bold text-white mb-6">🚀 Recommended Growth Experiments</h3>
+                <div id="res-experiments" class="grid gap-4">
+                    <!-- Injected -->
+                </div>
+            </div>
+
+            <!-- JSON Data -->
+            <div class="text-center">
+                 <button onclick="copyReport()" class="text-slate-500 hover:text-white text-xs font-mono uppercase tracking-widest transition">Copy Full Report JSON</button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+    const PAYMENT_RECIPIENT = '0x9497FE4B4ECA41229b9337abAEbCC91eCc7be23B';
+    const COST = '0.0010';
+    let fullReport = null;
+
+    // --- Wallet ---
+    async function connectWallet() {
+        if (!window.ethereum) return alert("MetaMask not found");
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        
+        // Monad Switch
+        try {
+             await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0x279f' }], 
+            });
+        } catch (err) {
+            if (err.code === 4902) {
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: '0x279f',
+                        chainName: 'Monad Testnet',
+                        rpcUrls: ['https://testnet-rpc.monad.xyz'],
+                        nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
+                        blockExplorerUrls: ["http://testnet.monadexplorer.com/"]
+                    }],
+                });
+            }
+        }
+
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
+        const addr = await signer.getAddress();
+        document.getElementById('connectBtn').innerText = addr.substring(0,6) + '...';
+        return signer;
+    }
+
+    // --- Action ---
+    async function runAnalysis() {
+        const url = document.getElementById('urlInput').value.trim();
+        if(!url) return alert("Please enter a URL");
+        
+        setStatus("Connecting Wallet...", false);
+        
+        try {
+            const signer = await connectWallet();
+            
+            setStatus(`Signing Payment (${COST} MON)...`, false);
+            const tx = await signer.sendTransaction({
+                to: PAYMENT_RECIPIENT,
+                value: ethers.utils.parseEther(COST)
+            });
+            
+            setStatus("Verifying & Scanning (This may take 30s)...", true);
+            
+            // Backend Call
+            const res = await fetch('/api/competescan/run/', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken') 
+                },
+                body: JSON.stringify({ url: url, tx_hash: tx.hash })
+            });
+
+            const data = await res.json();
+            if(!res.ok) throw new Error(data.error || "Unknown error");
+            
+            renderResults(data);
+            setStatus("", false);
+
+        } catch (e) {
+            console.error(e);
+            setStatus("Error: " + e.message, false);
+            alert(e.message);
+        }
+    }
+
+    function setStatus(msg, pulse) {
+        const el = document.getElementById('statusMsg');
+        el.innerText = msg;
+        el.classList.remove('hidden');
+        if(!msg) el.classList.add('hidden');
+        if(pulse) el.classList.add('animate-pulse');
+        else el.classList.remove('animate-pulse');
+    }
+
+    function renderResults(data) {
+        fullReport = data;
+        document.getElementById('resultsArea').classList.remove('hidden');
+        
+        // Summary
+        document.getElementById('res-summary-line').innerText = data.summary?.one_line || "Analysis Complete";
+        const insightsHtml = (data.summary?.key_insights || []).map(i => 
+            `<span class="px-3 py-1 rounded-lg bg-orange-500/10 text-orange-300 text-xs border border-orange-500/20">${i}</span>`
+        ).join('');
+        document.getElementById('res-key-insights').innerHTML = insightsHtml;
+
+        // Biz
+        const bizHtml = `
+            <p><span class="text-slate-500">Type:</span> ${data.business_overview?.type || '-'}</p>
+            <p><span class="text-slate-500">Region:</span> ${data.business_overview?.region || '-'}</p>
+            <p><span class="text-slate-500">ICP:</span> ${data.business_overview?.icp || '-'}</p>
+        `;
+        document.getElementById('res-biz').innerHTML = bizHtml;
+
+        // Pricing
+        const plans = (data.pricing?.plans || []).map(p => 
+            `<div class="flex justify-between border-b border-white/5 pb-1 mb-1 last:border-0"><span class="text-white">${p.name}</span> <span class="text-orange-400 font-mono">${p.price}</span></div>`
+        ).join('');
+        document.getElementById('res-pricing').innerHTML = `
+            <p class="mb-2"><span class="text-slate-500">Model:</span> ${data.pricing?.model || '-'}</p>
+            <div class="bg-black/20 p-3 rounded-lg">${plans || 'No specific plans found.'}</div>
+        `;
+
+        // SWOT
+        document.getElementById('res-strengths').innerHTML = (data.strengths_weaknesses?.strengths || []).map(s => `<li>${s}</li>`).join('');
+        document.getElementById('res-weaknesses').innerHTML = (data.strengths_weaknesses?.weaknesses || []).map(s => `<li>${s}</li>`).join('');
+
+        // Experiments
+        const expHtml = (data.growth_experiments || []).map(ex => `
+            <div class="p-4 bg-white/5 rounded-xl border border-white/5 flex gap-4 items-start">
+                <div class="mt-1 w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_5px_blue]"></div>
+                <div>
+                    <p class="text-slate-200 text-sm font-medium mb-1">${ex.experiment}</p>
+                    <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Impact: ${ex.impact}</span>
+                </div>
+            </div>
+        `).join('');
+        document.getElementById('res-experiments').innerHTML = expHtml;
+    }
+
+    function copyReport() {
+        if(!fullReport) return;
+        navigator.clipboard.writeText(JSON.stringify(fullReport, null, 2));
+        alert("JSON copied to clipboard!");
+    }
+
+    function getCookie(name) {
+        if (!document.cookie) return null;
+        const xsrf = document.cookie.split('; ').find(row => row.startsWith(name + '='));
+        return xsrf ? decodeURIComponent(xsrf.split('=')[1]) : null;
+    }
+    </script>
+</body>
+</html>
