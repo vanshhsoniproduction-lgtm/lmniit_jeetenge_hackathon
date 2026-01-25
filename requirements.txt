@@ -22,6 +22,9 @@ eth-account>=0.8.0
 # Google Generative AI (Gemini)
 google-genai
 
+# Groq AI (Llama 3/Mixtral)
+groq>=0.4.0
+
 # HTTP Requests
 requests>=2.31
 
