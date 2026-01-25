@@ -19,4 +19,7 @@ urlpatterns = [
     
     # Profile Entry
     path('profile/', views.profile_view, name='profile'),
+    
+    # Proxy for History
+    path('api/history/', views.proxy_tx_history, name='proxy_tx_history'),
 ]

@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}CompeteScan AI{% endblock %}
+{% block nav_competescan %}active{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 800px; margin: 0 auto;">
+    
+    <!-- Header -->
+    <div style="margin-bottom: 32px; border-bottom: 1px solid var(--border-light); padding-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+            <div style="width: 48px; height: 48px; background: var(--bg-card); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text-main);">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <div>
+                <h1 class="font-bold text-xl">CompeteScan AI</h1>
+                <p class="text-muted text-sm">Strategic competitor analysis from website URL</p>
+            </div>
+        </div>
+        <div class="font-mono text-xs text-dim">Using x402 Protocol • 0.0010 MON per request</div>
+    </div>
+
+    <!-- Input Form -->
+    <form id="competeForm">
+        <div class="input-group">
+            <label class="input-label">Competitor Website URL</label>
+            <input type="url" id="targetUrl" class="input-field" placeholder="https://competitor.com" required>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%;">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            Analyze Competitor
+        </button>
+    </form>
+    
+    <!-- Results Area -->
+    <div id="resultArea" style="display: none; margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border-light);">
+        
+        <h3 class="font-bold text-lg mb-6">Analysis Report</h3>
+
+        <!-- Business Overview -->
+        <div class="mb-8">
+            <h4 class="font-bold text-md mb-2 text-main">Business Overview</h4>
+            <div class="p-4 bg-card rounded-lg border border-light">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><span class="text-dim text-xs uppercase block mb-1">Type</span><div id="bizType" class="text-sm"></div></div>
+                    <div><span class="text-dim text-xs uppercase block mb-1">Region</span><div id="bizRegion" class="text-sm"></div></div>
+                    <div class="md:col-span-2"><span class="text-dim text-xs uppercase block mb-1">Products</span><div id="bizProducts" class="text-sm"></div></div>
+                    <div class="md:col-span-2"><span class="text-dim text-xs uppercase block mb-1">Ideal Customer</span><div id="bizICP" class="text-sm"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pricing -->
+        <div class="mb-8">
+            <h4 class="font-bold text-md mb-2 text-main">Pricing Strategy</h4>
+            <div class="p-4 bg-card rounded-lg border border-light">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><span class="text-dim text-xs uppercase block mb-1">Model</span><div id="priceModel" class="text-sm"></div></div>
+                    <div><span class="text-dim text-xs uppercase block mb-1">Free Trial</span><div id="priceTrial" class="text-sm"></div></div>
+                </div>
+                <div class="mt-4">
+                    <span class="text-dim text-xs uppercase block mb-1">Plans</span>
+                    <ul id="pricePlans" class="list-disc pl-4 text-sm text-muted"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SWOT -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div>
+                <h4 class="font-bold text-md mb-2 text-green-500">Strengths</h4>
+                <ul id="swotStrengths" class="list-disc pl-4 text-sm text-muted"></ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-md mb-2 text-red-500">Weaknesses</h4>
+                <ul id="swotWeaknesses" class="list-disc pl-4 text-sm text-muted"></ul>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="p-4 bg-body rounded border border-light">
+            <h4 class="font-bold text-sm mb-2 text-main">Executive Summary</h4>
+            <p id="summaryText" class="text-sm text-muted italic"></p>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('competeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const url = document.getElementById('targetUrl').value;
+        const resultArea = document.getElementById('resultArea');
+        resultArea.style.display = 'none';
+
+        try {
+            const response = await window.x402Fetch('/api/x402/competescan/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                resultArea.style.display = 'block';
+                
+                // Helper to safely set text
+                const setText = (id, val) => document.getElementById(id).innerText = val || 'N/A';
+                
+                // Overview
+                setText('bizType', data.business_overview?.type);
+                setText('bizRegion', data.business_overview?.region);
+                setText('bizICP', data.business_overview?.icp);
+                
+                const prods = data.business_overview?.products || [];
+                document.getElementById('bizProducts').innerText = Array.isArray(prods) ? prods.join(', ') : prods;
+
+                // Pricing
+                setText('priceModel', data.pricing?.model);
+                setText('priceTrial', data.pricing?.free_trial ? 'Yes' : 'No');
+                
+                const plansList = document.getElementById('pricePlans');
+                plansList.innerHTML = '';
+                (data.pricing?.plans || []).forEach(p => {
+                    const li = document.createElement('li');
+                    li.innerText = p;
+                    plansList.appendChild(li);
+                });
+
+                // SWOT
+                const sList = document.getElementById('swotStrengths');
+                sList.innerHTML = '';
+                (data.strengths_weaknesses?.strengths || []).forEach(s => {
+                    const li = document.createElement('li');
+                    li.innerText = s;
+                    sList.appendChild(li);
+                });
+
+                const wList = document.getElementById('swotWeaknesses');
+                wList.innerHTML = '';
+                (data.strengths_weaknesses?.weaknesses || []).forEach(w => {
+                    const li = document.createElement('li');
+                    li.innerText = w;
+                    wList.appendChild(li);
+                });
+                
+                // Summary
+                setText('summaryText', data.summary?.one_line);
+
+            } else {
+                alert("Analysis failed: " + response.statusText);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("An error occurred during analysis.");
+        }
+    });
+</script>
+{% endblock %}

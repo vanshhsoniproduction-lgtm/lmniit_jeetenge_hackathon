@@ -28,6 +28,9 @@ requests>=2.31
 # Web Scraping
 beautifulsoup4>=4.12
 
+# YouTube Transcript Extraction (YT Docs Agent)
+youtube-transcript-api>=0.6.0
+
 # Database (Agar PostgreSQL use karna ho future mein)
 # psycopg2-binary>=2.9
 # dj-database-url>=2.1

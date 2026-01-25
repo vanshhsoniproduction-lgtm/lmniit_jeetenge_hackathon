@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}YT Docs Agent{% endblock %}
+{% block nav_ytdocs %}active{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 900px; margin: 0 auto;">
+    
+    <!-- Header -->
+    <div style="margin-bottom: 32px; border-bottom: 1px solid var(--border-light); padding-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+            <div style="width: 48px; height: 48px; background: var(--bg-card); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text-main);">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+                <h1 class="font-bold text-xl">YT Docs Agent</h1>
+                <p class="text-muted text-sm">Convert YouTube videos into structured documentation & tutorials</p>
+            </div>
+        </div>
+        <div class="font-mono text-xs text-dim">Using x402 Protocol • 0.00001 MON per request</div>
+    </div>
+
+    <!-- Input Form -->
+    <form id="ytdocsForm">
+        <div class="input-group">
+            <label class="input-label">YouTube Video URL</label>
+            <input type="url" id="youtubeUrl" class="input-field" placeholder="https://www.youtube.com/watch?v=..." required>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="input-group">
+                <label class="input-label">Documentation Style</label>
+                <select id="docStyle" class="input-field">
+                    <option value="tutorial">Tutorial (Step-by-step)</option>
+                    <option value="course_notes">Course Notes (Concepts)</option>
+                    <option value="cheat_sheet">Cheat Sheet (Quick ref)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">Manual Transcript (Optional)</label>
+            <textarea id="manualTranscript" class="input-field" rows="4" placeholder="Paste transcript if auto-caption fails..."></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%;">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            Generate Documentation
+        </button>
+    </form>
+    
+    <!-- Results Area -->
+    <div id="resultArea" style="display: none; margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border-light);">
+        
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-3 gap-4 mb-8 text-center bg-body p-4 rounded border border-light">
+            <div>
+                <span class="block text-xs uppercase text-dim mb-1">Video ID</span>
+                <span id="videoIdDisplay" class="font-mono text-sm">...</span>
+            </div>
+            <div>
+                <span class="block text-xs uppercase text-dim mb-1">Style</span>
+                <span id="styleDisplay" class="font-mono text-sm">...</span>
+            </div>
+            <div>
+                <span class="block text-xs uppercase text-dim mb-1">Length</span>
+                <span id="transcriptLengthDisplay" class="font-mono text-sm">...</span>
+            </div>
+        </div>
+
+        <!-- Summary & Takeaways -->
+        <div class="bg-card border border-light rounded-lg p-6 mb-8">
+            <h4 class="font-bold text-md mb-3 text-main">📌 Executive Summary</h4>
+            <p id="oneSummaryText" class="text-sm text-muted italic mb-6"></p>
+
+            <h4 class="font-bold text-md mb-3 text-main">✅ Key Takeaways</h4>
+            <ul id="takeawaysList" class="list-disc pl-4 text-sm text-muted"></ul>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="flex gap-4 border-b border-light mb-6">
+            <button class="tab-btn active" onclick="switchTab('preview')">Preview</button>
+            <button class="tab-btn" onclick="switchTab('raw')">Markdown Source</button>
+            <button class="tab-btn" onclick="switchTab('faq')">FAQ</button>
+        </div>
+
+        <!-- Tab: Preview -->
+        <div id="tab-preview" class="tab-content block">
+             <div class="flex justify-end mb-4">
+                <button onclick="downloadMd()" class="text-xs bg-body border border-light px-3 py-1 rounded hover:bg-hover transition">⬇ Download .md</button>
+            </div>
+            <div id="markdownPreview" class="prose prose-invert max-w-none text-sm text-muted"></div>
+        </div>
+
+        <!-- Tab: Raw -->
+        <div id="tab-raw" class="tab-content hidden">
+            <div class="relative group">
+                <pre id="rawMarkdown" class="bg-body p-4 rounded text-xs font-mono text-muted whitespace-pre-wrap h-96 overflow-y-auto"></pre>
+                 <button onclick="copyRawMd()" class="absolute top-2 right-2 bg-card border border-light p-2 rounded opacity-0 group-hover:opacity-100 transition text-xs">Copy</button>
+            </div>
+        </div>
+
+        <!-- Tab: FAQ -->
+        <div id="tab-faq" class="tab-content hidden">
+            <div id="faqList" class="space-y-4"></div>
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+    .tab-btn {
+        padding: 8px 16px;
+        color: var(--text-dim);
+        border-bottom: 2px solid transparent;
+        transition: 0.2s;
+    }
+    .tab-btn.active {
+        color: var(--text-main);
+        border-bottom-color: var(--text-main);
+    }
+    .tab-btn:hover { color: var(--text-main); }
+    .hidden { display: none; }
+    .block { display: block; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tab Switching
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.replace('block', 'hidden'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+        document.getElementById('tab-' + tabName).classList.replace('hidden', 'block');
+        event.target.classList.add('active');
+    }
+
+    // Form Submission
+    document.getElementById('ytdocsForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const url = document.getElementById('youtubeUrl').value;
+        const style = document.getElementById('docStyle').value;
+        const manualTx = document.getElementById('manualTranscript').value;
+        
+        const resultArea = document.getElementById('resultArea');
+        resultArea.style.display = 'none';
+
+        try {
+            const response = await window.x402Fetch('/api/x402/ytdocs/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    youtube_url: url,
+                    doc_style: style,
+                    manual_transcript: manualTx
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                resultArea.style.display = 'block';
+                
+                // Meta
+                document.getElementById('videoIdDisplay').innerText = data.video_id || '-';
+                document.getElementById('styleDisplay').innerText = style;
+                document.getElementById('transcriptLengthDisplay').innerText = (data.transcript_length || 0) + ' chars';
+                
+                // Summary
+                document.getElementById('oneSummaryText').innerText = data.one_line_summary || "No summary.";
+                
+                // Takeaways
+                const ul = document.getElementById('takeawaysList');
+                ul.innerHTML = '';
+                (data.key_takeaways || []).forEach(t => {
+                    const li = document.createElement('li');
+                    li.innerText = t;
+                    ul.appendChild(li);
+                });
+
+                // Markdown
+                const mdContent = data.documentation_markdown || data.markdown || "";
+                document.getElementById('rawMarkdown').innerText = mdContent;
+                document.getElementById('markdownPreview').innerHTML = marked.parse(mdContent);
+
+                // FAQ
+                const faqContainer = document.getElementById('faqList');
+                faqContainer.innerHTML = '';
+                (data.faq || []).forEach(q => {
+                    const div = document.createElement('div');
+                    div.className = "bg-card border border-light rounded p-4";
+                    // Handle OpenAI vs Gemini FAQ format difference if any (Gemini returns q/a keys based on prompt)
+                    // Prompt schema: { "q": "...", "a": "..." }
+                    const question = q.q || q.question || "Q";
+                    const answer = q.a || q.answer || "A";
+                    div.innerHTML = `<div class="font-bold text-sm mb-2 text-main">Q: ${question}</div><div class="text-sm text-muted">A: ${answer}</div>`;
+                    faqContainer.appendChild(div);
+                });
+
+            } else {
+                alert("Generation failed: " + response.statusText);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("An error occurred.");
+        }
+    });
+
+    function copyRawMd() {
+        navigator.clipboard.writeText(document.getElementById('rawMarkdown').innerText)
+            .then(() => alert('Copied Markdown!'));
+    }
+
+    function downloadMd() {
+        const text = document.getElementById('rawMarkdown').innerText;
+        const blob = new Blob([text], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ytdocs-export.md`;
+        a.click();
+    }
+</script>
+{% endblock %}

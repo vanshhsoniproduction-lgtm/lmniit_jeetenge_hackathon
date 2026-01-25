@@ -38,6 +38,7 @@ from django.conf import settings  # Django settings (API keys, etc.)
 from django.utils import timezone  # Timezone aware datetime
 from django.http import JsonResponse  # JSON API responses bhejne ke liye
 from django.views.decorators.http import require_POST, require_GET  # HTTP method restrictions
+from django.views.decorators.csrf import csrf_exempt  # CSRF exemption for API endpoints
 from django.contrib.auth.decorators import login_required  # User login check
 from google import genai  # Google Gemini AI API
 import socket  # Network socket operations (IPv4 fix)
@@ -171,11 +172,17 @@ def x402_payment_required(required_amount, asset="MON", description="API Access"
                 # ❌ Payment header NAHI hai - 402 response bhejo
                 log_x402(f"402 Triggered for: {description} | Amount: {required_amount} {asset}")
                 
+                # Format amount as proper decimal string (not scientific notation)
+                # ethers.js needs "0.00001" not "1e-05"
+                amount_str = f"{required_amount:.10f}".rstrip('0').rstrip('.')
+                if '.' not in amount_str:
+                    amount_str = amount_str + '.0'
+                
                 # Response body mein payment requirements bhejo
                 response = JsonResponse({
                     "message": f"Payment Required: {description}",
                     "paymentRequirements": {
-                        "amount": str(required_amount),   # Kitna pay karna hai
+                        "amount": amount_str,             # Kitna pay karna hai (proper decimal)
                         "asset": asset,                   # Token symbol
                         "chain": "Monad Testnet",         # Blockchain name
                         "chainId": "10143",               # Blockchain ID
@@ -188,7 +195,7 @@ def x402_payment_required(required_amount, asset="MON", description="API Access"
                 response['x-evm-chain-id'] = '10143'
                 response['x-payment-address'] = PAYMENT_RECIPIENT
                 response['x-price-currency'] = asset
-                response['x-price-amount'] = str(required_amount)
+                response['x-price-amount'] = amount_str
                 response['Access-Control-Expose-Headers'] = 'x-evm-chain-id, x-payment-address, x-price-currency, x-price-amount'
                 
                 return response
@@ -747,26 +754,74 @@ def run_scraper_x402(request):
             socket.getaddrinfo = original_getaddrinfo  # Original restore karo
         
         # ═══════════════════════════════════════════════════════════════
-        # STEP 4: Scraped content validate karo
+        # STEP 4: AI Structuring (Enterprise Formatting)
         # ═══════════════════════════════════════════════════════════════
         if not context or len(context) < 50:
             log_error("Scraping failed - insufficient content")
             return JsonResponse({'error': 'Failed to scrape website. Try a different URL.'}, status=400)
-        
+            
+        log_info("Profiling content with Gemini...")
+        try:
+            prompt = f"""
+            You are an enterprise web data analyst.
+            Analyze the following raw scraped text from {url}.
+            Transform it into a clean, structured, and professional Markdown report.
+            
+            Required Format:
+            # [Website Title/Header]
+            
+            ### Executive Summary
+            (A concise 2-3 sentence overview of what this page is about)
+            
+            ### Key Information / Offerings
+            (Bulleted list of main points, products, or articles found)
+            
+            ### Extracted Data
+            (Any specific dates, prices, names, or metrics found)
+            
+            ### Raw Content Summary
+            (Brief mention of total content extracted)
+            
+            Raw Content Context:
+            {context[:25000]}
+            """
+            
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
+            resp = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
+            structured_content = resp.text
+        except Exception as e:
+            log_error(f"Gemini formatting failed: {e}")
+            structured_content = f"### Raw Extraction (AI Formatting Unavailable)\n\n{context[:5000]}...\n\n(Full content saved in database)"
+
         # ═══════════════════════════════════════════════════════════════
         # STEP 5: Success! Response bhejo
         # ═══════════════════════════════════════════════════════════════
-        log_success(f"Scraped {len(context)} characters successfully!")
+        log_success(f"Scraped & Structured {len(context)} characters successfully!")
+        
+        # Save Transaction History
+        payment_header = request.headers.get('x-payment', 'x402-payment')
+        output_data = {
+            'url': url,
+            'content_length': len(context),
+            'markdown': structured_content  # Return structured content
+        }
+        
+        AnalysisTransaction.objects.create(
+            user=request.user,
+            category='SCRAPER',
+            agent_type='web_scraper',
+            input_text=url,
+            title=url,
+            output_data=json.dumps(output_data),
+            tx_hash=payment_header[:66] if len(payment_header) > 66 else payment_header,
+            cost=0.0001
+        )
         
         # Return scraped data as JSON
         return JsonResponse({
             'status': 'success',                                    # Status indicator
             'message': 'Scraping complete via x402 payment!',       # Success message
-            'data': {
-                'url': url,                                         # Original URL
-                'content_length': len(context),                     # Total characters scraped
-                'preview': context[:500] + '...' if len(context) > 500 else context  # Preview (first 500 chars)
-            }
+            'data': output_data                                     # Return full data
         })
         
     except Exception as e:
@@ -839,7 +894,17 @@ def run_github_x402(request):
             readme_url = f"https://raw.githubusercontent.com/{owner}/{repo}/HEAD/README.md"
             readme = get_gh_content(readme_url)
             
-            prompt = f"Analyze this GitHub repo ({agent_type}). README: {readme[:20000]}. Return JSON with key 'summary' containing HTML."
+            prompt = f"""
+            Analyze this GitHub repo ({agent_type}). 
+            README Context: {readme[:20000]}.
+            
+            Return strictly a JSON object with a single key 'summary'.
+            The value of 'summary' should be a well-formatted Markdown string.
+            - Use bullet points (-) for lists.
+            - Do NOT use emojis.
+            - Ensure clean spacing between sections (double newlines).
+            - Use ### for headers.
+            """
             
             client = genai.Client(api_key=settings.GEMINI_API_KEY)
             resp = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
@@ -993,7 +1058,8 @@ def run_audio_x402(request):
                 r = requests.post(
                     el_url,
                     headers={"xi-api-key": settings.ELEVENLABS_API_KEY},
-                    files={'file': f, 'model_id': (None, 'scribe_v1'), 'diarize': (None, 'true')}
+                    data={'model_id': 'scribe_v1', 'diarize': 'true'},
+                    files={'file': f}
                 )
             
             if r.status_code != 200:
@@ -1002,6 +1068,27 @@ def run_audio_x402(request):
             
             transcript_json = r.json()
             utterances = transcript_json.get('utterances', [])
+            
+            # Construct utterances from words if needed (Scribe v1 fallback)
+            if not utterances and 'words' in transcript_json:
+                words = transcript_json['words']
+                if words:
+                    current_speaker = words[0].get('speaker_id', 'unknown')
+                    current_text = []
+                    for w in words:
+                        s_id = w.get('speaker_id', 'unknown')
+                        if s_id != current_speaker:
+                            utterances.append({
+                                'speaker': current_speaker,
+                                'text': " ".join(current_text)
+                            })
+                            current_speaker = s_id
+                            current_text = [w['text']]
+                        else:
+                            current_text.append(w['text'])
+                    if current_text:
+                        utterances.append({'speaker': current_speaker, 'text': " ".join(current_text)})
+
             full_text = " ".join([u['text'] for u in utterances]) if utterances else transcript_json.get('text', '')
             
             print(f" > Transcription Complete. {len(utterances)} segments")
@@ -1015,6 +1102,7 @@ def run_audio_x402(request):
             - "minutes": HTML string (bullet points).
             - "todos": HTML string (actionable items).
             - "deadlines": HTML string (dates/times mentioned).
+            - "chat_segments": List of objects {{"speaker": "Name/A", "text": "..."}}. Try to split by speaker changes.
             
             Transcript: {full_text[:40000]}
             """
@@ -1028,8 +1116,12 @@ def run_audio_x402(request):
             clean = resp.text.replace("```json", "").replace("```", "")
             final_data = json.loads(clean)
         except:
-            final_data = {"summary": resp.text, "minutes": "", "todos": "", "deadlines": ""}
+            final_data = {"summary": resp.text, "minutes": "", "todos": "", "deadlines": "", "chat_segments": []}
         
+        # Fallback to Gemini diarization if ElevenLabs failed
+        if not utterances and final_data.get('chat_segments'):
+            utterances = final_data.get('chat_segments')
+            
         final_data['transcript'] = full_text
         final_data['utterances'] = utterances
         
@@ -1042,3 +1134,683 @@ def run_audio_x402(request):
     except Exception as e:
         print(f" ! x402 AUDIO ERROR: {e}")
         return JsonResponse({'error': str(e)}, status=500)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# 📺 YT DOCS AGENT - YouTube Video Documentation Generator
+# ════════════════════════════════════════════════════════════════════════════
+"""
+YT DOCS AGENT EXPLANATION:
+--------------------------
+Yeh agent YouTube video link leta hai aur uska structured documentation generate karta hai.
+
+FEATURES:
+1. YouTube transcript API se transcript fetch karta hai
+2. Gemini AI use karke documentation generate karta hai
+3. Multiple doc styles support: tutorial, course_notes, cheat_sheet
+
+PRICE: 0.00001 MON per request
+"""
+
+from .youtube_helper import get_youtube_transcript, extract_video_id
+
+
+@login_required
+def ytdocs_view(request):
+    """
+    ╔══════════════════════════════════════════════════════════════════════════╗
+    ║  YT DOCS PAGE - User Interface for YouTube Documentation Agent           ║
+    ╚══════════════════════════════════════════════════════════════════════════╝
+    
+    GET /agents/ytdocs/ → Renders the YT Docs interface page
+    """
+    return render(request, 'agents/ytdocs.html')
+
+
+@login_required
+def agent_github_view(request):
+    """Render GitHub Agent Interface"""
+    return render(request, 'agents/github.html')
+
+@login_required
+def agent_audio_view(request):
+    """Render Voice/Audio Agent Interface"""
+    return render(request, 'agents/audio.html')
+
+@login_required
+def agent_competescan_view(request):
+    """Render CompeteScan Agent Interface"""
+    return render(request, 'agents/competescan.html')
+
+@login_required
+def agent_scraper_view(request):
+    """Render Web Scraper Agent Interface"""
+    return render(request, 'agents/scraper.html')
+
+@csrf_exempt
+@login_required
+@require_POST
+@x402_payment_required(required_amount=0.00001, asset="MON", description="YouTube Docs Agent")
+def run_ytdocs_x402(request):
+    """
+    ╔══════════════════════════════════════════════════════════════════════════╗
+    ║  x402 YT DOCS AGENT                                                       ║
+    ║  YouTube video se structured documentation banata hai (paid via x402)    ║
+    ╚══════════════════════════════════════════════════════════════════════════╝
+    
+    PRICE: 0.00001 MON per request
+    
+    INPUT (JSON body):
+    - youtube_url: Full YouTube video URL
+    - doc_style: "tutorial" | "course_notes" | "cheat_sheet" (default: tutorial)
+    - manual_transcript: (optional) Agar transcript API fail ho to
+    
+    OUTPUT (JSON):
+    - title: Video title/topic
+    - one_line_summary: Ek line summary
+    - table_of_contents: List of sections
+    - documentation_markdown: Full markdown documentation
+    - key_takeaways: Important points
+    - step_by_step: Step by step guide (if applicable)
+    - common_mistakes: Things to avoid
+    - faq: Frequently asked questions
+    
+    x402 FLOW:
+    1. Request aata hai without x-payment header
+    2. Decorator 402 return karta hai with payment requirements
+    3. Frontend MetaMask trigger karta hai
+    4. Payment ke baad retry with x-payment header
+    5. Yeh function run hota hai
+    """
+    
+    log_agent("YT-DOCS", f"User: {request.user.wallet_address}")
+    log_success("x402 Payment Verified - Starting YT Docs Agent...")
+    
+    try:
+        # ═══════════════════════════════════════════════════════════════════
+        # STEP 1: Parse request body
+        # ═══════════════════════════════════════════════════════════════════
+        data = json.loads(request.body)
+        youtube_url = data.get('youtube_url', '').strip()
+        doc_style = data.get('doc_style', 'tutorial')
+        manual_transcript = data.get('manual_transcript', '')
+        
+        log_info(f"YouTube URL: {youtube_url}")
+        log_info(f"Doc Style: {doc_style}")
+        
+        # Validation
+        if not youtube_url and not manual_transcript:
+            log_error("Missing YouTube URL")
+            return JsonResponse({
+                'error': 'YouTube URL is required',
+                'detail': 'Please provide a valid YouTube video URL'
+            }, status=400)
+        
+        # Validate doc_style
+        valid_styles = ['tutorial', 'course_notes', 'cheat_sheet']
+        if doc_style not in valid_styles:
+            doc_style = 'tutorial'
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # STEP 2: Get transcript (from API or manual)
+        # ═══════════════════════════════════════════════════════════════════
+        transcript_text = manual_transcript
+        video_id = None
+        
+        if youtube_url and not manual_transcript:
+            log_info("Fetching transcript from YouTube...")
+            
+            # Extract video ID
+            video_id = extract_video_id(youtube_url)
+            if not video_id:
+                log_error("Invalid YouTube URL format")
+                return JsonResponse({
+                    'error': 'Invalid YouTube URL format',
+                    'detail': 'Please provide a valid YouTube video URL (youtube.com or youtu.be)'
+                }, status=400)
+            
+            # Fetch transcript
+            transcript_result = get_youtube_transcript(youtube_url)
+            
+            if not transcript_result['success']:
+                log_error(f"Transcript fetch failed: {transcript_result['error']}")
+                return JsonResponse({
+                    'error': transcript_result['error'],
+                    'fallback': transcript_result.get('fallback', ''),
+                    'video_id': video_id,
+                    'detail': 'You can paste the transcript manually instead'
+                }, status=400)
+            
+            transcript_text = transcript_result['transcript']
+            log_success(f"Transcript fetched: {len(transcript_text)} characters")
+        
+        if not transcript_text or len(transcript_text) < 100:
+            log_error("Transcript too short")
+            return JsonResponse({
+                'error': 'Transcript is too short or empty',
+                'detail': 'Please provide a video with sufficient spoken content'
+            }, status=400)
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # STEP 3: Generate documentation using Gemini
+        # ═══════════════════════════════════════════════════════════════════
+        log_info(f"Generating {doc_style} documentation with Gemini...")
+        
+        # Doc style specific instructions
+        style_instructions = {
+            'tutorial': """
+                Create a beginner-friendly tutorial with:
+                - Clear step-by-step instructions
+                - Code examples where applicable
+                - Explanations for each step
+                - Common mistakes to avoid
+            """,
+            'course_notes': """
+                Create comprehensive study notes with:
+                - Main concepts and definitions
+                - Key points organized by topic
+                - Examples and explanations
+                - Review questions
+            """,
+            'cheat_sheet': """
+                Create a quick reference cheat sheet with:
+                - Concise bullet points
+                - Important commands/syntax
+                - Quick tips and shortcuts
+                - Minimal explanations, maximum content density
+            """
+        }
+        
+        prompt = f"""
+        You are a technical documentation expert. Based on this video transcript, create structured documentation.
+        
+        DOCUMENTATION STYLE: {doc_style}
+        {style_instructions.get(doc_style, style_instructions['tutorial'])}
+        
+        TRANSCRIPT:
+        {transcript_text[:40000]}
+        
+        Return ONLY valid JSON (no markdown code blocks, no extra text) with this exact schema:
+        {{
+            "title": "Clear descriptive title based on video content",
+            "one_line_summary": "One sentence summary of entire video",
+            "table_of_contents": ["Section 1", "Section 2", "Section 3"],
+            "documentation_markdown": "Full markdown documentation with proper headings (##), bullet points, code blocks where needed. Make it comprehensive and well-structured.",
+            "key_takeaways": ["Key point 1", "Key point 2", "Key point 3"],
+            "step_by_step": ["Step 1: Description", "Step 2: Description"],
+            "common_mistakes": ["Mistake 1 to avoid", "Mistake 2 to avoid"],
+            "faq": [
+                {{"q": "Question 1?", "a": "Answer 1"}},
+                {{"q": "Question 2?", "a": "Answer 2"}}
+            ]
+        }}
+        
+        IMPORTANT:
+        - documentation_markdown should be complete, detailed, and professional
+        - Use proper markdown formatting (headings, bullets, code blocks)
+        - If video is technical, include code examples
+        - Make content actionable and useful
+        - Return ONLY JSON, no other text
+        """
+        
+        # Apply IPv4 patch and call Gemini
+        socket.getaddrinfo = new_getaddrinfo
+        try:
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
+            resp = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
+        finally:
+            socket.getaddrinfo = original_getaddrinfo
+        
+        log_success("Gemini response received")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # STEP 4: Parse Gemini response
+        # ═══════════════════════════════════════════════════════════════════
+        try:
+            # Clean response (remove markdown code blocks if any)
+            clean_response = resp.text.strip()
+            if clean_response.startswith('```json'):
+                clean_response = clean_response[7:]
+            if clean_response.startswith('```'):
+                clean_response = clean_response[3:]
+            if clean_response.endswith('```'):
+                clean_response = clean_response[:-3]
+            clean_response = clean_response.strip()
+            
+            final_data = json.loads(clean_response)
+            log_success("Documentation generated successfully")
+            
+        except json.JSONDecodeError as e:
+            log_error(f"JSON parse error: {e}")
+            # Fallback: wrap raw response
+            final_data = {
+                "title": "Generated Documentation",
+                "one_line_summary": "Documentation generated from YouTube video",
+                "table_of_contents": [],
+                "documentation_markdown": resp.text,
+                "key_takeaways": [],
+                "step_by_step": [],
+                "common_mistakes": [],
+                "faq": []
+            }
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # STEP 5: Save to database
+        # ═══════════════════════════════════════════════════════════════════
+        log_info("Saving to database...")
+        
+        # Get payment header for tx_hash
+        payment_header = request.headers.get('x-payment', '')
+        
+        AnalysisTransaction.objects.create(
+            user=request.user,
+            category='YTDOCS',
+            agent_type='youtube_docs',
+            input_text=youtube_url,
+            title=final_data.get('title', video_id or 'YouTube Docs'),
+            output_data=json.dumps(final_data),
+            tx_hash=payment_header,
+            cost=0.00001
+        )
+        
+        log_success("Documentation saved to database")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # STEP 6: Return response
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # Add metadata to response
+        final_data['video_id'] = video_id
+        final_data['youtube_url'] = youtube_url
+        final_data['doc_style'] = doc_style
+        final_data['transcript_length'] = len(transcript_text)
+        
+        return JsonResponse(final_data)
+        
+    except Exception as e:
+        log_error(f"YT-DOCS Exception: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def history_view(request):
+    """Render Usage History & Stats"""
+    # Fetch data
+    txns = AnalysisTransaction.objects.filter(user=request.user).order_by('-created_at')
+    
+    # Calculate stats
+    total_spend = sum(t.cost for t in txns)
+    total_txns = txns.count()
+    
+    # Prepare JSON for charts
+    history_data = []
+    for t in txns:
+        history_data.append({
+            'date': t.created_at.strftime('%Y-%m-%d'),
+            'cost': float(t.cost),
+            'agent': t.category
+        })
+        
+    return render(request, 'history.html', {
+        'transactions': txns,
+        'total_spend': total_spend,
+        'total_txns': total_txns,
+        'history_json': json.dumps(history_data)
+    })
+
+
+# ============================================================================
+# 🔬 MODEL INTELLIGENCE LAB - Blind LLM Evaluation
+# ============================================================================
+"""
+MODEL INTELLIGENCE LAB EXPLANATION:
+-----------------------------------
+Yeh agent 2 random Gemini models ko same prompt pe run karta hai
+aur user ko blind evaluation karne deta hai (model names hide karke).
+
+FEATURES:
+1. 4 Gemini model variants support
+2. Blind comparison (model names hidden)
+3. User preference recording
+4. Enterprise output profiles (Executive, Technical, etc.)
+
+PRICE: 0.0002 MON per evaluation (2 model calls)
+"""
+
+from .models import ModelEvaluation
+import random
+import concurrent.futures
+from groq import Groq
+
+# ============================================================================
+# MODEL INTELLIGENCE LAB - GROQ MODELS ONLY
+# ============================================================================
+# 4 AI Models available - Random 2 selected for each battle
+# All models powered by Groq's ultra-fast inference
+
+MODELS_CONFIG = {
+    'llama33': {
+        'name': 'Llama 3.3 70B',
+        'provider': 'Meta',
+        'model_id': 'llama-3.3-70b-versatile',
+    },
+    'llama4': {
+        'name': 'Llama 4 Scout',
+        'provider': 'Meta',
+        'model_id': 'meta-llama/llama-4-scout-17b-16e-instruct',
+    },
+    'kimi': {
+        'name': 'Kimi K2',
+        'provider': 'Moonshot',
+        'model_id': 'moonshotai/kimi-k2-instruct',
+    },
+    'gptoss': {
+        'name': 'GPT OSS 120B',
+        'provider': 'OpenAI Community',
+        'model_id': 'openai/gpt-oss-120b',
+    },
+}
+
+# Output Profile System Prompts
+OUTPUT_PROFILES = {
+    'executive_brief': """
+        You are an executive advisor. Return concise answer (<= 120 words).
+        Be direct, decision-ready. No fluff, just actionable insights.
+        Format: Clear paragraphs, bullet points for key items.
+    """,
+    'technical_deep_dive': """
+        You are a senior technical architect. Provide structured answer with:
+        - Clear headings (##) for each section
+        - Edge cases and tradeoffs
+        - Technical considerations
+        - Implementation notes
+        Format: Well-structured markdown with code blocks if relevant.
+    """,
+    'developer_response': """
+        You are a senior developer helping a colleague. Provide:
+        - Code snippets when relevant (with proper markdown code blocks)
+        - Practical implementation advice
+        - Common pitfalls to avoid
+        - Best practices
+        Format: Developer-friendly, copy-paste ready code examples.
+    """,
+    'strategy_risk': """
+        You are a business strategist and risk analyst. Provide:
+        - Business-oriented analysis
+        - Risks and constraints
+        - Mitigation strategies
+        - Next steps and recommendations
+        Format: Executive summary + detailed breakdown.
+    """,
+}
+
+@login_required
+def model_lab_view(request):
+    """
+    ╔══════════════════════════════════════════════════════════════════════════╗
+    ║  MODEL INTELLIGENCE LAB PAGE - Blind LLM Evaluation Interface            ║
+    ╚══════════════════════════════════════════════════════════════════════════╝
+    
+    GET /lab/models/ → Renders the Model Intelligence Lab page
+    """
+    # Fetch last 5 evaluations for history
+    recent_evals = ModelEvaluation.objects.filter(user=request.user)[:5]
+    
+    return render(request, 'agents/model_lab.html', {
+        'recent_evaluations': recent_evals,
+        'models_config': MODELS_CONFIG,
+    })
+
+
+def call_gemini(prompt, profile_prompt):
+    """
+    Call Gemini 2.5 Flash API.
+    Returns response text or error message.
+    """
+    try:
+        full_prompt = f"""
+        {profile_prompt}
+        
+        USER REQUEST:
+        {prompt}
+        """
+        
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        resp = client.models.generate_content(
+            model='gemini-2.5-flash', 
+            contents=full_prompt
+        )
+        return resp.text
+    except Exception as e:
+        return f"⚠️ Gemini Error: {str(e)[:200]}"
+
+
+def call_groq(prompt, profile_prompt, model_id='llama-3.3-70b-versatile'):
+    """
+    Call Groq API with specified model.
+    Supports: llama-3.3-70b-versatile, mixtral-8x7b-32768
+    Returns response text or error message.
+    """
+    try:
+        full_prompt = f"""
+        {profile_prompt}
+        
+        USER REQUEST:
+        {prompt}
+        """
+        
+        client = Groq(api_key=settings.GROQ_API_KEY)
+        resp = client.chat.completions.create(
+            model=model_id,
+            messages=[
+                {"role": "user", "content": full_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=2048,
+        )
+        return resp.choices[0].message.content
+    except Exception as e:
+        return f"⚠️ Groq Error: {str(e)[:200]}"
+
+
+@csrf_exempt
+@login_required
+@require_POST
+@x402_payment_required(required_amount=0.0002, asset="MON", description="Model Intelligence Lab Evaluation")
+def run_model_evaluation(request):
+    """
+    ╔══════════════════════════════════════════════════════════════════════════╗
+    ║  MODEL LAB - Gemini vs Groq Blind Evaluation                              ║
+    ║  Compares Gemini 2.5 Flash (Google) vs Llama 3.3 70B (Groq)              ║
+    ╚══════════════════════════════════════════════════════════════════════════╝
+    
+    PRICE: 0.0002 MON per evaluation
+    
+    INPUT (JSON body):
+    - prompt: User's input text
+    - profile: Output profile (executive_brief, technical_deep_dive, etc.)
+    
+    OUTPUT (JSON):
+    - model_a: Model A name (randomly assigned Gemini or Groq)
+    - model_b: Model B name (the other one)
+    - response_a: Response from model A
+    - response_b: Response from model B
+    
+    NOTE: Models are randomly assigned to A/B to prevent bias!
+    """
+    
+    log_agent("MODEL-LAB", f"User: {request.user.wallet_address}")
+    log_success("x402 Payment Verified - Starting Gemini vs Groq Battle...")
+    
+    try:
+        # ═══════════════════════════════════════════════════════════════════
+        # STEP 1: Parse request body
+        # ═══════════════════════════════════════════════════════════════════
+        data = json.loads(request.body)
+        prompt = data.get('prompt', '').strip()
+        profile = data.get('profile', 'executive_brief')
+        
+        log_info(f"Prompt: {prompt[:100]}...")
+        log_info(f"Prompt: {prompt[:100]}...")
+        
+        # Validation
+        if not prompt:
+            log_error("Missing prompt")
+            return JsonResponse({
+                'error': 'Prompt is required',
+                'detail': 'Please enter a request for the models to respond to'
+            }, status=400)
+        
+        # Generic Smart System Prompt
+        profile_prompt = """
+        You are a helpful and intelligent AI assistant participating in a blind model evaluation.
+        
+        INSTRUCTIONS:
+        1. Adapt to the user's tone and intent exactly.
+        2. If the user says "Hello", simply reply with a polite greeting. DO NOT write an essay.
+        3. If the user asks for code, provide clean, commented code.
+        4. If the user asks a complex question, provide a detailed and structured answer.
+        5. Be direct and avoid unnecessary filler ("As an AI model...", "Here is the answer...").
+        """
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # STEP 2: Randomly select 2 models from 3 available
+        # ═══════════════════════════════════════════════════════════════════
+        model_keys = list(MODELS_CONFIG.keys())  # ['gemini', 'llama', 'mixtral']
+        selected = random.sample(model_keys, 2)  # Pick 2 random
+        
+        model_a_key = selected[0]
+        model_b_key = selected[1]
+        
+        model_a_config = MODELS_CONFIG[model_a_key]
+        model_b_config = MODELS_CONFIG[model_b_key]
+        
+        model_a_name = model_a_config['name']
+        model_b_name = model_b_config['name']
+        
+        log_info(f"Selected: {model_a_name} (A) vs {model_b_name} (B)")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # STEP 3: Call both Groq models in parallel
+        # ═══════════════════════════════════════════════════════════════════
+        log_info("Calling Groq models...")
+        
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                future_a = executor.submit(
+                    call_groq, prompt, profile_prompt, model_a_config['model_id']
+                )
+                future_b = executor.submit(
+                    call_groq, prompt, profile_prompt, model_b_config['model_id']
+                )
+                
+                # Wait for results
+                response_a = future_a.result(timeout=60)
+                response_b = future_b.result(timeout=60)
+        
+        except Exception as e:
+            log_error(f"Groq API error: {str(e)}")
+            raise
+        
+        log_success(f"{model_a_name} (A): {len(response_a)} chars")
+        log_success(f"{model_b_name} (B): {len(response_b)} chars")
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # STEP 4: Return responses (model names for reveal after selection)
+        # ═══════════════════════════════════════════════════════════════════
+        log_success("🎯 Battle complete - returning blind responses")
+        
+        return JsonResponse({
+            'model_a': model_a_name,
+            'model_b': model_b_name,
+            'response_a': response_a,
+            'response_b': response_b,
+            'prompt': prompt,
+        })
+        
+    except Exception as e:
+        log_error(f"MODEL-LAB Exception: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+@require_POST
+def record_model_selection(request):
+    """
+    ╔══════════════════════════════════════════════════════════════════════════╗
+    ║  MODEL LAB - Record User's Selection                                      ║
+    ║  Saves which response the user preferred (A or B)                         ║
+    ╚══════════════════════════════════════════════════════════════════════════╝
+    
+    INPUT (JSON body):
+    - prompt: Original prompt
+    - profile: Output profile used
+    - model_a: Name of model A
+    - model_b: Name of model B
+    - response_a: Response from model A
+    - response_b: Response from model B
+    - winner: "A" or "B"
+    
+    OUTPUT (JSON):
+    - success: true/false
+    - message: Confirmation message
+    - winning_model: Name of the model that won
+    """
+    
+    log_agent("MODEL-LAB", "Recording selection...")
+    
+    try:
+        data = json.loads(request.body)
+        
+        prompt = data.get('prompt', '')
+        profile = data.get('profile', 'executive_brief')
+        model_a = data.get('model_a', '')
+        model_b = data.get('model_b', '')
+        response_a = data.get('response_a', '')
+        response_b = data.get('response_b', '')
+        winner = data.get('winner', '').upper()
+        
+        # Validation
+        if winner not in ['A', 'B']:
+            return JsonResponse({
+                'error': 'Invalid winner selection',
+                'detail': 'Winner must be "A" or "B"'
+            }, status=400)
+        
+        if not all([prompt, model_a, model_b, response_a, response_b]):
+            return JsonResponse({
+                'error': 'Missing required fields',
+                'detail': 'All evaluation data is required'
+            }, status=400)
+        
+        # Determine winning model
+        winning_model = model_a if winner == 'A' else model_b
+        
+        # Save to database
+        ModelEvaluation.objects.create(
+            user=request.user,
+            prompt=prompt,
+            profile=profile,
+            model_a=model_a,
+            model_b=model_b,
+            response_a=response_a,
+            response_b=response_b,
+            winner=winner,
+            tx_hash=request.headers.get('x-payment', ''),
+            cost=0.0002
+        )
+        
+        log_success(f"Selection recorded: {winner} ({winning_model}) won!")
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Selection recorded for analytics',
+            'winning_model': winning_model,
+            'winner': winner,
+        })
+        
+    except Exception as e:
+        log_error(f"MODEL-LAB Selection Error: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+

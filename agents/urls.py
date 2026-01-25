@@ -137,4 +137,40 @@ urlpatterns = [
     # │ Returns: { summary, minutes, todos, deadlines, transcript }          │
     # └──────────────────────────────────────────────────────────────────────┘
     path('x402/audio/', views.run_audio_x402, name='run_audio_x402'),
+    
+    # ┌──────────────────────────────────────────────────────────────────────┐
+    # │ 📺 YT DOCS AGENT (x402) - NEW!                                       │
+    # │ Price: 0.00001 MON                                                   │
+    # │ Method: POST                                                         │
+    # │ Body: { youtube_url, doc_style }                                     │
+    # │ Returns: { title, documentation_markdown, key_takeaways, faq, etc }  │
+    # └──────────────────────────────────────────────────────────────────────┘
+    path('x402/ytdocs/', views.run_ytdocs_x402, name='run_ytdocs_x402'),
+    
+    # YT Docs Page (UI)
+    path('ytdocs/', views.ytdocs_view, name='ytdocs_view'),
+
+    # ════════════════════════════════════════════════════════════════════════
+    # UI VIEW ENDPOINTS (Serve HTML Templates)
+    # ════════════════════════════════════════════════════════════════════════
+    path('view/github/', views.agent_github_view, name='agent_github'),
+    path('view/audio/', views.agent_audio_view, name='agent_audio'),
+    path('view/competescan/', views.agent_competescan_view, name='agent_competescan'),
+    path('view/scraper/', views.agent_scraper_view, name='agent_scraper'),
+    path('history/', views.history_view, name='history_view'),
+    
+    # ┌──────────────────────────────────────────────────────────────────────┐
+    # │ 🔬 MODEL INTELLIGENCE LAB                                            │
+    # │ Blind LLM evaluation and comparison                                  │
+    # │ Price: 0.0002 MON per evaluation                                     │
+    # └──────────────────────────────────────────────────────────────────────┘
+    
+    # Lab Page (UI)
+    path('lab/models/', views.model_lab_view, name='model_lab'),
+    
+    # Run Evaluation (x402 - 0.0002 MON)
+    path('x402/lab/evaluate/', views.run_model_evaluation, name='run_model_evaluation'),
+    
+    # Record Selection (free - just saves preference)
+    path('lab/selection/', views.record_model_selection, name='record_model_selection'),
 ]

@@ -163,6 +163,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # ===========================================
 # LOGIN/LOGOUT REDIRECTS
 # ===========================================
+LOGIN_URL = '/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
 
@@ -174,6 +175,10 @@ GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 
 # ElevenLabs API Key - Text-to-Speech ke liye
 ELEVENLABS_API_KEY = config('ELEVENLABS_API_KEY', default='')
+
+# Groq API Key - Model Intelligence Lab ke liye (Llama 3.3 70B)
+# Free Tier: 14,400 req/day, 30 req/min (Gemini se 100x zyada!)
+GROQ_API_KEY = config('GROQ_API_KEY', default='')
 
 # ===========================================
 # DATABASE: Default SQLite use ho raha hai

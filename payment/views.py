@@ -174,7 +174,26 @@ def receipt_view(request, tx_hash):
 
 @login_required
 def payment_history(request):
-    # Show all paid requests or transactions?
-    # Let's show transactions which are proofs of payment
+    # Show transactions which are proofs of payment from DB
     txs = PaymentTransaction.objects.all().order_by('-created_at')
     return render(request, 'payment/history.html', {'transactions': txs})
+
+# 6. PROXY API FOR EXPLORER (Fix CORS)
+@login_required
+def proxy_tx_history(request):
+    """
+    Fetches tx list from Monad Explorer server-side to avoid CORS on client.
+    """
+    address = request.user.wallet_address
+    # Use Blockscout API format
+    url = f"https://testnet.monadexplorer.com/api?module=account&action=txlist&address={address}&sort=desc&page=1&offset=20"
+    
+    try:
+        # Request external API
+        import requests
+        resp = requests.get(url, timeout=10)
+        data = resp.json()
+        return JsonResponse(data)
+    except Exception as e:
+        print(f"Proxy Error: {e}")
+        return JsonResponse({'status': '0', 'message': str(e), 'result': []})

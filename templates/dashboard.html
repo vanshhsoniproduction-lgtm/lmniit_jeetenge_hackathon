@@ -1,1531 +1,312 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Web3.AI</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #050505; 
-            background-image: linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px);
-            background-size: 20px 20px;
-            color: #E2E8F0;
-        }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
-        
-        /* Glassmorphism */
-        .glass-panel {
-            background: rgba(20, 20, 25, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-        }
-        
-        .nav-item.active { 
-            background: linear-gradient(90deg, rgba(79, 70, 229, 0.2) 0%, rgba(79, 70, 229, 0) 100%);
-            border-left: 3px solid #6366f1;
-            color: #818cf8; 
-        }
-        
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        
-        /* Glow Effects */
-        .glow-hover:hover {
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
-            border-color: rgba(99, 102, 241, 0.5);
-        }
+{% extends 'base.html' %}
+{% load static %}
 
-        .chat-bubble {
-            position: relative;
-            z-index: 10;
-        }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-    </style>
-</head>
-<body class="h-screen flex overflow-hidden">
+<!-- ═══════════════════════════════════════════════════════════════════════════════
+     DASHBOARD
+     ═══════════════════════════════════════════════════════════════════════════════ -->
 
-    <!-- Sidebar -->
-    <aside class="w-64 glass-panel border-r-0 border-white/10 flex flex-col justify-between hidden md:flex z-50 transition-all duration-300 relative" id="sidebar">
-        <div class="p-6">
-            <div class="flex items-center gap-3 mb-10 pl-2">
-                 <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">AI</div>
-                <span class="text-xl font-bold tracking-tight text-white">Web3.AI</span>
-            </div>
+{% block title %}Dashboard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
 
-            <nav class="space-y-2">
-                <button onclick="switchView('home')" id="nav-home" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition active">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-                    New Analysis
-                </button>
-                <button onclick="switchView('history')" id="nav-history" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    History & Analytics
-                </button>
-                <button onclick="window.location.href='{% url 'profile' %}'" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
-                    PayLink Agent
-                </button>
-                <button onclick="window.location.href='/logout/'" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-500/10 transition mt-8 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                    Logout
-                </button>
-            </nav>
-        </div>
-        
-        <div class="p-6 border-t border-white/5 bg-black/20">
-            <div class="rounded-xl p-3 border border-white/10 bg-black/40">
-                <p class="text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-widest">Active Wallet</p>
-                <p class="text-xs text-indigo-400 break-all font-mono mb-2 truncate">{{ user.wallet_address }}</p>
-                <div class="flex items-center justify-between">
-                    <span id="balanceDisplay" class="text-sm font-bold text-white">-- MON</span>
-                    <div class="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
-                </div>
-            </div>
-        </div>
-    </aside>
+{% block extra_css %}
+<style>
+    .welcome-header { margin-bottom: 40px; }
+    .welcome-title { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+    .welcome-subtitle { color: var(--text-muted); font-size: 16px; max-width: 600px; }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 40px;
+    }
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        padding: 20px;
+        border-radius: 12px;
+    }
+    .stat-val { font-size: 24px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--text-main); }
+    .stat-lbl { font-size: 12px; text-transform: uppercase; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
 
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
-        
-        <!-- Toggle & Header Mobile -->
-        <header class="flex justify-between items-center p-4 md:p-6 sticky top-0 md:hidden z-20 glass-panel border-x-0 border-t-0">
-             <span class="text-lg font-bold text-white">Web3.AI</span>
-             <button onclick="document.querySelector('aside').classList.toggle('hidden')" class="p-2 text-slate-400">
-                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
-             </button>
-        </header>
+    .agents-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 24px;
+    }
 
-        <!-- Content Views -->
-        <div id="content-area" class="flex-1 overflow-y-auto p-4 md:p-10 relative scroll-smooth">
-            
-            <!-- VIEW: HOME (Agent Selection) -->
-            <div id="view-home" class="max-w-6xl mx-auto animate-fade-in pt-10">
-                <header class="mb-12">
-                    <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">Select Intelligence <span class="text-indigo-500">Node</span></h1>
-                    <p class="text-slate-400 max-w-2xl text-lg">Deploy autonomous agents to analyze your codebase or meetings. <br/>Powered by verifiable compute.</p>
-                </header>
+    .agent-card {
+        background: var(--bg-panel);
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        padding: 24px;
+        position: relative;
+        transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+    }
+    
+    .agent-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--text-muted);
+        background: var(--bg-hover);
+    }
+    
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    .agent-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--bg-body);
+        border: 1px solid var(--border-light);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-main);
+    }
+    .agent-tag {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 4px 8px;
+        background: var(--bg-body);
+        border: 1px solid var(--border-light);
+        border-radius: 4px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    
-                    <!-- GitHub Card -->
-                    <div onclick="openGithubForm()" class="group glass-panel p-8 rounded-3xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:border-indigo-500/50 relative overflow-hidden">
-                         <div class="absolute -right-10 -top-10 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl group-hover:bg-indigo-600/30 transition"></div>
-                        
-                        <div class="relative z-10">
-                            <div class="flex justify-between items-start mb-8">
-                                <div class="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center border border-indigo-500/20 text-3xl">
-                                    <svg class="w-8 h-8 text-indigo-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-                                </div>
-                                <span class="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-mono border border-indigo-500/20">v3.4.1</span>
-                            </div>
-                            
-                            <h3 class="text-2xl font-bold text-white mb-2 group-hover:text-indigo-400 transition">GitHub Architect</h3>
-                            <p class="text-slate-400 mb-8 font-medium">Deep analysis of codebases, PR audits, and issue triaging.</p>
-                            
-                            <div class="grid grid-cols-2 gap-3 mb-8">
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Repo Summarization</div>
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Code Architecture</div>
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">PR Review</div>
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Security Audit</div>
-                            </div>
-                            
-                            <div class="flex items-center justify-between border-t border-white/10 pt-6">
-                                <div class="flex flex-col">
-                                    <span class="text-xs text-slate-500 uppercase font-bold">Est Cost</span>
-                                    <span class="text-emerald-400 font-mono">0.0002 - 0.0008 MON</span>
-                                </div>
-                                <button class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center group-hover:rotate-45 transition">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+    .agent-name { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--text-main); }
+    .agent-desc { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; flex-grow: 1; }
+    
+    .agent-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-light);
+    }
+    .price-block { display: flex; flex-direction: column; }
+    .price-lbl { font-size: 10px; text-transform: uppercase; color: var(--text-dim); font-weight: 600; }
+    .price-val { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text-main); }
 
-                    <!-- Audio Card -->
-                    <div onclick="openAudioForm()" class="group glass-panel p-8 rounded-3xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:border-purple-500/50 relative overflow-hidden">
-                         <div class="absolute -right-10 -top-10 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl group-hover:bg-purple-600/30 transition"></div>
-                        
-                        <div class="relative z-10">
-                             <div class="flex justify-between items-start mb-8">
-                                <div class="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-500/20 text-3xl">
-                                    <svg class="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                                </div>
-                                <span class="px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 text-xs font-mono border border-purple-500/20">v1.0.2</span>
-                            </div>
-                            
-                            <h3 class="text-2xl font-bold text-white mb-2 group-hover:text-purple-400 transition">Voice Intelligence</h3>
-                            <p class="text-slate-400 mb-8 font-medium">Extract meeting minutes, action items, and detect speakers.</p>
-                             
-                            <div class="grid grid-cols-2 gap-3 mb-8">
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Speaker Diarization</div>
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Smart Summary</div>
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Deadline Detection</div>
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">To-Do Extraction</div>
-                            </div>
-                            
-                             <div class="flex items-center justify-between border-t border-white/10 pt-6">
-                                <div class="flex flex-col">
-                                    <span class="text-xs text-slate-500 uppercase font-bold">Fixed Cost</span>
-                                    <span class="text-purple-400 font-mono">0.0011 MON</span>
-                                </div>
-                                <button class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center group-hover:rotate-45 transition">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+    .arrow-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 1px solid var(--border-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        transition: 0.2s;
+    }
+    .agent-card:hover .arrow-icon {
+        background: var(--text-main);
+        color: var(--bg-body);
+        border-color: var(--text-main);
+    }
+</style>
+{% endblock %}
 
-                    
-                    <!-- CompeteScan Card -->
-                    <div onclick="switchView('competescan')" class="group glass-panel p-8 rounded-3xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:border-orange-500/50 relative overflow-hidden">
-                         <div class="absolute -right-10 -top-10 w-64 h-64 bg-orange-600/20 rounded-full blur-3xl group-hover:bg-orange-600/30 transition"></div>
-                        
-                        <div class="relative z-10">
-                             <div class="flex justify-between items-start mb-8">
-                                <div class="w-16 h-16 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20 text-3xl">
-                                    <svg class="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                                </div>
-                                <span class="px-3 py-1 rounded-full bg-orange-500/10 text-orange-400 text-xs font-mono border border-orange-500/20">v1.0.0</span>
-                            </div>
-                            
-                            <h3 class="text-2xl font-bold text-white mb-2 group-hover:text-orange-400 transition">CompeteScan AI</h3>
-                            <p class="text-slate-400 mb-8 font-medium">Deep competitive analysis of websites, pricing models, and strategy.</p>
-                             
-                            <div class="grid grid-cols-2 gap-3 mb-8">
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Pricing Analysis</div>
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">SWOT Report</div>
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Growth Experiments</div>
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Business Model</div>
-                            </div>
-                            
-                            <div class="flex items-center justify-between border-t border-white/10 pt-6">
-                                <div class="flex flex-col">
-                                    <span class="text-xs text-slate-500 uppercase font-bold">Fixed Cost</span>
-                                    <span class="text-orange-400 font-mono">0.0010 MON</span>
-                                </div>
-                                <button class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center group-hover:rotate-45 transition">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+{% block content %}
 
-                    <!-- x402 Scraper Card (NEW - x402 Protocol) -->
-                    <div onclick="switchView('scraper-x402')" class="group glass-panel p-8 rounded-3xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:border-cyan-500/50 relative overflow-hidden">
-                         <div class="absolute -right-10 -top-10 w-64 h-64 bg-cyan-600/20 rounded-full blur-3xl group-hover:bg-cyan-600/30 transition"></div>
-                        
-                        <div class="relative z-10">
-                             <div class="flex justify-between items-start mb-8">
-                                <div class="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center border border-cyan-500/20 text-3xl">
-                                    <svg class="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                </div>
-                                <span class="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-mono border border-cyan-500/20">x402</span>
-                            </div>
-                            
-                            <h3 class="text-2xl font-bold text-white mb-2 group-hover:text-cyan-400 transition">x402 Scraper <span class="text-xs font-normal bg-cyan-500/20 px-2 py-0.5 rounded text-cyan-300 ml-2">NEW</span></h3>
-                            <p class="text-slate-400 mb-8 font-medium">Pay-per-request scraper using x402 protocol. Automatic wallet signature flow.</p>
-                             
-                            <div class="grid grid-cols-2 gap-3 mb-8">
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Auto Payment</div>
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Thirdweb SDK</div>
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">HTTP 402 Flow</div>
-                                <div class="px-3 py-2 bg-white/5 rounded-lg text-xs text-slate-300">Signature Auth</div>
-                            </div>
-                            
-                            <div class="flex items-center justify-between border-t border-white/10 pt-6">
-                                <div class="flex flex-col">
-                                    <span class="text-xs text-slate-500 uppercase font-bold">x402 Price</span>
-                                    <span class="text-cyan-400 font-mono">0.0001 MON</span>
-                                </div>
-                                <button class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center group-hover:rotate-45 transition">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- VIEW: GITHUB FORM -->
-            <div id="view-github" class="max-w-3xl mx-auto hidden animate-fade-in py-20">
-                <button onclick="switchView('home')" class="mb-8 flex items-center gap-2 text-slate-500 hover:text-white transition text-sm font-mono">
-                    ← // BACK_TO_ROOT
-                </button>
-                
-                <div class="glass-panel p-10 rounded-3xl border border-white/10">
-                    <h2 class="text-3xl font-bold text-white mb-8 flex items-center gap-4">
-                        <span class="text-indigo-500">GITHUB_AGENT</span> // CONFIG
-                    </h2>
-
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Target Repository</label>
-                    <div class="relative group mb-8">
-                        <div class="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl blur opacity-20 group-hover:opacity-60 transition duration-500"></div>
-                        <input type="text" id="repoUrlInput" placeholder="https://github.com/owner/repo" class="relative w-full px-6 py-4 bg-black border border-white/10 rounded-xl focus:outline-none text-white font-mono placeholder-slate-700">
-                    </div>
-
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Analysis Module</label>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-                        <button onclick="selectGhType(this, 'summary')" class="gh-type-btn active px-4 py-4 rounded-xl border border-indigo-500/50 bg-indigo-500/10 text-indigo-300 text-sm font-bold text-center transition hover:bg-indigo-500/20">Summarizer</button>
-                        <button onclick="selectGhType(this, 'architecture')" class="gh-type-btn px-4 py-4 rounded-xl border border-white/10 bg-white/5 text-slate-400 text-sm font-medium text-center transition hover:bg-white/10">Architecture</button>
-                        <button onclick="selectGhType(this, 'issues')" class="gh-type-btn px-4 py-4 rounded-xl border border-white/10 bg-white/5 text-slate-400 text-sm font-medium text-center transition hover:bg-white/10">Issues</button>
-                        <button onclick="selectGhType(this, 'pr_review')" class="gh-type-btn px-4 py-4 rounded-xl border border-white/10 bg-white/5 text-slate-400 text-sm font-medium text-center transition hover:bg-white/10">PR Review</button>
-                    </div>
-
-                    <button id="btn-run-github" onclick="runGithubAgent()" class="w-full py-4 bg-white text-black font-bold rounded-xl shadow-lg hover:shadow-indigo-500/50 hover:scale-[1.01] transition flex items-center justify-center gap-2">
-                        <span>Execute Contract</span>
-                        <span class="bg-black/10 px-2 py-0.5 rounded text-xs font-mono">~0.0002 MON</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- VIEW: AUDIO FORM -->
-            <div id="view-audio" class="max-w-3xl mx-auto hidden animate-fade-in py-20">
-                <button onclick="switchView('home')" class="mb-8 flex items-center gap-2 text-slate-500 hover:text-white transition text-sm font-mono">
-                    ← // BACK_TO_ROOT
-                </button>
-                
-                <div class="glass-panel p-10 rounded-3xl border border-white/10">
-                    <h2 class="text-3xl font-bold text-white mb-8 flex items-center gap-4">
-                        <span class="text-purple-500">VOICE_INTELLIGENCE</span> // UPLOAD
-                    </h2>
-
-                    <div id="drop-zone" class="border-2 border-dashed border-white/10 rounded-2xl p-16 text-center hover:bg-white/5 transition cursor-pointer mb-8 relative group">
-                        <input type="file" id="audioFileInput" class="hidden" accept="audio/*">
-                        <div class="w-20 h-20 bg-purple-500/10 text-purple-400 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl group-hover:scale-110 transition border border-purple-500/20">🎙️</div>
-                        <h4 class="text-xl font-bold text-white mb-2">Drop Audio File Here</h4>
-                        <p class="text-sm text-slate-500 font-mono">.MP3, .WAV (Max 25MB)</p>
-                        <p id="file-name-display" class="mt-6 text-purple-400 font-mono font-bold hidden bg-purple-500/10 inline-block px-4 py-2 rounded"></p>
-                    </div>
-
-                    <button id="btn-run-audio" onclick="runAudioAgent()" class="w-full py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:shadow-purple-500/40 hover:scale-[1.01] transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                        <span>Transcribe & Analyze</span>
-                         <span class="bg-black/20 px-2 py-0.5 rounded text-xs font-mono">0.0011 MON</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- VIEW: COMPETESCAN FORM -->
-            <div id="view-competescan" class="max-w-3xl mx-auto hidden animate-fade-in py-20">
-                <button onclick="switchView('home')" class="mb-8 flex items-center gap-2 text-slate-500 hover:text-white transition text-sm font-mono">
-                    ← // BACK_TO_ROOT
-                </button>
-                
-                <div class="glass-panel p-10 rounded-3xl border border-white/10 relative overflow-hidden group">
-                     <div class="absolute -right-20 -top-20 w-64 h-64 bg-orange-600/10 rounded-full blur-[80px] -z-10 group-hover:bg-orange-600/20 transition duration-700"></div>
-
-                    <h2 class="text-3xl font-bold text-white mb-8 flex items-center gap-4">
-                        <span class="text-orange-500">COMPETESCAN_AI</span> // TARGET
-                    </h2>
-
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Competitor Website URL</label>
-                    <div class="relative group mb-10">
-                        <div class="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-amber-600 rounded-xl blur opacity-20 group-hover:opacity-60 transition duration-500"></div>
-                        <input type="text" id="competeUrlInput" placeholder="https://competitor.com" class="relative w-full px-6 py-4 bg-black border border-white/10 rounded-xl focus:outline-none text-white font-mono placeholder-slate-700">
-                    </div>
-
-                    <button id="btn-run-compete" onclick="runCompeteScan()" class="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-600 text-white font-bold rounded-xl shadow-lg hover:shadow-orange-500/40 hover:scale-[1.01] transition flex items-center justify-center gap-2">
-                        <span>Scan & Analyze</span>
-                         <span class="bg-black/20 px-2 py-0.5 rounded text-xs font-mono">0.0010 MON</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- VIEW: x402 SCRAPER FORM -->
-            <div id="view-scraper-x402" class="max-w-3xl mx-auto hidden animate-fade-in py-20">
-                <button onclick="switchView('home')" class="mb-8 flex items-center gap-2 text-slate-500 hover:text-white transition text-sm font-mono">
-                    ← // BACK_TO_ROOT
-                </button>
-                
-                <div class="glass-panel p-10 rounded-3xl border border-cyan-500/30 relative overflow-hidden group">
-                     <div class="absolute -right-20 -top-20 w-64 h-64 bg-cyan-600/10 rounded-full blur-[80px] -z-10 group-hover:bg-cyan-600/20 transition duration-700"></div>
-
-                    <div class="flex items-center gap-4 mb-8">
-                        <div class="w-12 h-12 bg-cyan-500/10 rounded-2xl flex items-center justify-center border border-cyan-500/20">
-                            <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        </div>
-                        <div>
-                            <h2 class="text-3xl font-bold text-white flex items-center gap-3">
-                                <span class="text-cyan-400">x402_SCRAPER</span>
-                                <span class="text-xs font-normal bg-cyan-500/20 px-2 py-1 rounded text-cyan-300 border border-cyan-500/30">HTTP 402 Protocol</span>
-                            </h2>
-                            <p class="text-slate-500 text-sm font-mono mt-1">Powered by Thirdweb wrapFetchWithPayment</p>
-                        </div>
-                    </div>
-
-                    <!-- How it works -->
-                    <div class="bg-black/40 rounded-xl p-4 mb-8 border border-cyan-500/10">
-                        <p class="text-xs text-cyan-400 font-bold uppercase tracking-widest mb-3">x402 Protocol Flow</p>
-                        <div class="flex items-center gap-2 text-sm text-slate-400">
-                            <span class="bg-cyan-500/20 text-cyan-300 px-2 py-1 rounded font-mono text-xs">1. Request</span>
-                            <span class="text-slate-600">→</span>
-                            <span class="bg-red-500/20 text-red-300 px-2 py-1 rounded font-mono text-xs">2. 402 Response</span>
-                            <span class="text-slate-600">→</span>
-                            <span class="bg-purple-500/20 text-purple-300 px-2 py-1 rounded font-mono text-xs">3. Wallet Sign</span>
-                            <span class="text-slate-600">→</span>
-                            <span class="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded font-mono text-xs">4. Auto Retry</span>
-                        </div>
-                    </div>
-
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Target URL to Scrape</label>
-                    <div class="relative group mb-8">
-                        <div class="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl blur opacity-20 group-hover:opacity-60 transition duration-500"></div>
-                        <input type="text" id="scraperX402UrlInput" placeholder="https://example.com" class="relative w-full px-6 py-4 bg-black border border-white/10 rounded-xl focus:outline-none text-white font-mono placeholder-slate-700">
-                    </div>
-
-                    <!-- Console Output -->
-                    <div id="x402-console" class="bg-black/60 rounded-xl p-4 mb-8 border border-slate-800 max-h-40 overflow-y-auto hidden">
-                        <p class="text-xs font-mono text-slate-500">// x402 Protocol Console</p>
-                        <div id="x402-console-log" class="text-xs font-mono text-slate-400 space-y-1 mt-2"></div>
-                    </div>
-
-                    <button id="btn-run-scraper-x402" onclick="runScraperX402()" class="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-cyan-500/40 hover:scale-[1.01] transition flex items-center justify-center gap-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        <span>Execute with x402 Payment</span>
-                        <span class="bg-black/20 px-2 py-0.5 rounded text-xs font-mono">0.0001 MON</span>
-                    </button>
-                    
-                    <p class="text-center text-xs text-slate-600 mt-4 font-mono">
-                        Payment handled automatically via Thirdweb SDK • No manual tx required
-                    </p>
-                </div>
-            </div>
-
-            <!-- LOADING OVERLAY -->
-            <div id="loading-overlay" class="absolute inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center backdrop-blur-sm">
-                <div class="relative">
-                    <div class="w-24 h-24 border-4 border-indigo-500/30 rounded-full animate-spin"></div>
-                    <div class="w-24 h-24 border-4 border-t-indigo-500 rounded-full animate-spin absolute top-0 left-0"></div>
-                </div>
-                <h3 id="loading-text" class="text-2xl font-bold text-white mt-8 animate-pulse font-mono">INITIALIZING...</h3>
-                <p id="loading-sub" class="text-slate-500 mt-2 font-mono text-sm">Validating On-Chain Transaction</p>
-            </div>
-
-            <!-- VIEW: RESULTS -->
-            <div id="view-results" class="max-w-5xl mx-auto hidden animate-fade-in py-10">
-                 <button onclick="switchView('home')" class="mb-6 flex items-center gap-2 text-slate-500 hover:text-white transition text-sm font-mono">
-                    ← // NEW_SESSION
-                </button>
-                
-                <div class="glass-panel rounded-3xl border border-white/10 overflow-hidden">
-                    <div class="bg-black/40 px-8 py-4 flex justify-between items-center border-b border-white/10">
-                        <h2 class="text-lg font-bold flex items-center gap-2 text-white font-mono">
-                            <span class="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]"></span> OUTPUT_STREAM
-                        </h2>
-                        <button onclick="downloadJson()" id="btn-download-json" class="text-xs text-slate-400 hover:text-white uppercase font-bold tracking-wider hidden">Download JSON</button>
-                    </div>
-                    <div id="results-container" class="p-8 prose prose-invert max-w-none prose-p:text-slate-300 prose-headings:text-white prose-a:text-indigo-400">
-                        <!-- Content injected JS -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- VIEW: HISTORY -->
-            <div id="view-history" class="max-w-7xl mx-auto hidden animate-fade-in py-10">
-                <h2 class="text-3xl font-bold text-white mb-8 font-mono">LOGS_&_METRICS</h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    <div class="glass-panel p-6 rounded-2xl border-l-4 border-indigo-500">
-                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest font-mono">Total Burn</p>
-                        <h3 class="text-3xl font-bold text-white mt-2" id="stat-total-spent">0.000 MON</h3>
-                    </div>
-                     <div class="glass-panel p-6 rounded-2xl border-l-4 border-purple-500">
-                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest font-mono">Executions</p>
-                        <h3 class="text-3xl font-bold text-white mt-2" id="stat-total-files">--</h3>
-                    </div>
-                     <div class="glass-panel p-6 rounded-2xl border-l-4 border-emerald-500">
-                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest font-mono">Top Agent</p>
-                        <h3 class="text-3xl font-bold text-emerald-400 mt-2" id="stat-top-agent">--</h3>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                    <div class="glass-panel p-6 rounded-2xl">
-                        <h4 class="font-bold text-slate-300 mb-6 font-mono text-sm">GAS_SPENDING_7D</h4>
-                        <canvas id="chartSpending"></canvas>
-                    </div>
-                    <div class="glass-panel p-6 rounded-2xl">
-                        <h4 class="font-bold text-slate-300 mb-6 font-mono text-sm">AGENT_DISTRIBUTION</h4>
-                        <canvas id="chartServices"></canvas>
-                    </div>
-                </div>
-
-                <div class="glass-panel rounded-2xl overflow-hidden">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-white/5 border-b border-white/10 text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">
-                            <tr>
-                                <th class="px-6 py-4">Timestamp</th>
-                                <th class="px-6 py-4">Agent</th>
-                                <th class="px-6 py-4">Input Data</th>
-                                <th class="px-6 py-4">Fee (MON)</th>
-                                <th class="px-6 py-4">Status</th>
-                                <th class="px-6 py-4 text-right">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-table-body" class="divide-y divide-white/5 text-sm text-slate-300 font-mono">
-                             <!-- Rows by JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-        </div>
-    </main>
-
-    <!-- TOAST -->
-    <div id="toast" class="fixed bottom-6 right-6 bg-indigo-600 text-white px-6 py-4 rounded-xl shadow-[0_0_20px_rgba(79,70,229,0.5)] transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-bold flex items-center gap-3">
-        <div class="w-2 h-2 bg-white rounded-full animate-ping"></div>
-        <p id="toast-msg">Notification</p>
+    <!-- Header -->
+    <div class="welcome-header">
+        <h1 class="welcome-title">AI Agent Dashboard</h1>
+        <p class="welcome-subtitle">Select an autonomous agent to perform tasks. All services are paid per request using the x402 protocol on Monad Testnet.</p>
     </div>
 
+    <!-- Quick Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-val">Monad</div>
+            <div class="stat-lbl">Network</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val">x402</div>
+            <div class="stat-lbl">Protocol</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val">Active</div>
+            <div class="stat-lbl">Status</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val" id="dashBalance">--</div>
+            <div class="stat-lbl">Balance</div>
+        </div>
+    </div>
+
+    <!-- Agents Grid -->
+    <div class="agents-grid">
+        
+        <!-- GitHub Agent -->
+        <a href="{% url 'agent_github' %}" class="agent-card">
+            <div class="card-top">
+                <div class="agent-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                </div>
+                <span class="agent-tag">v3.4</span>
+            </div>
+            <h3 class="agent-name">GitHub Architect</h3>
+            <p class="agent-desc">Analyze repositories, review PRs, and get architectural insights using Gemini AI.</p>
+            <div class="agent-meta">
+                <div class="price-block">
+                    <span class="price-lbl">Cost per request</span>
+                    <span class="price-val">0.0005 MON</span>
+                </div>
+                <div class="arrow-icon">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </div>
+            </div>
+        </a>
+
+        <!-- Voice Agent -->
+        <a href="{% url 'agent_audio' %}" class="agent-card">
+            <div class="card-top">
+                <div class="agent-icon">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                </div>
+                <span class="agent-tag">v1.2</span>
+            </div>
+            <h3 class="agent-name">Voice Intelligence</h3>
+            <p class="agent-desc">Transcribe meetings, extract action items, and generate summaries from audio.</p>
+            <div class="agent-meta">
+                <div class="price-block">
+                    <span class="price-lbl">Cost per request</span>
+                    <span class="price-val">0.0011 MON</span>
+                </div>
+                <div class="arrow-icon">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </div>
+            </div>
+        </a>
+
+        <!-- CompeteScan -->
+        <a href="{% url 'agent_competescan' %}" class="agent-card">
+            <div class="card-top">
+                <div class="agent-icon">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <span class="agent-tag">v2.0</span>
+            </div>
+            <h3 class="agent-name">CompeteScan AI</h3>
+            <p class="agent-desc">Competitor analysis, pricing strategy, and SWOT analysis from URLs.</p>
+            <div class="agent-meta">
+                <div class="price-block">
+                    <span class="price-lbl">Cost per request</span>
+                    <span class="price-val">0.0010 MON</span>
+                </div>
+                <div class="arrow-icon">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </div>
+            </div>
+        </a>
+
+
+
+        <!-- YT Docs -->
+        <a href="{% url 'ytdocs_view' %}" class="agent-card">
+            <div class="card-top">
+                <div class="agent-icon">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <span class="agent-tag" style="color: #ec4899; border-color: rgba(236,72,153,0.3);">NEW</span>
+            </div>
+            <h3 class="agent-name">YT Docs Agent</h3>
+            <p class="agent-desc">Convert YouTube videos into structured documentation, tutorials, and notes.</p>
+            <div class="agent-meta">
+                <div class="price-block">
+                    <span class="price-lbl">Cost per request</span>
+                    <span class="price-val">0.00001 MON</span>
+                </div>
+                <div class="arrow-icon">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </div>
+            </div>
+        </a>
+
+        <!-- Model Intelligence Lab -->
+        <a href="{% url 'model_lab' %}" class="agent-card">
+            <div class="card-top">
+                <div class="agent-icon" style="background: linear-gradient(135deg, #4f46e5, #7c3aed);">
+                    <svg width="24" height="24" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                </div>
+                <span class="agent-tag" style="color: #a78bfa; border-color: rgba(167,139,250,0.3);">LAB</span>
+            </div>
+            <h3 class="agent-name">Model Intelligence Lab</h3>
+            <p class="agent-desc">Blind evaluation of Gemini models. Compare 2 random models side-by-side and select the best.</p>
+            <div class="agent-meta">
+                <div class="price-block">
+                    <span class="price-lbl">Cost per evaluation</span>
+                    <span class="price-val">0.0002 MON</span>
+                </div>
+                <div class="arrow-icon">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </div>
+            </div>
+        </a>
+
+        <!-- Coming Soon Card -->
+        <div class="agent-card" style="background: linear-gradient(135deg, rgba(20,20,20,0.9), rgba(10,10,10,0.95)); border: 1px dashed rgba(255,255,255,0.15); cursor: default;">
+            <div class="card-top">
+                <div class="agent-icon" style="background: linear-gradient(135deg, #1a1a1a, #0a0a0a); border-color: rgba(255,255,255,0.1);">
+                    <!-- Rocket Icon -->
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: #888;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <span class="agent-tag" style="color: #f59e0b; border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.1);">COMING SOON</span>
+            </div>
+            <h3 class="agent-name" style="color: #e5e5e5;">More AI Agents</h3>
+            <p class="agent-desc" style="color: #666;">Powerful autonomous agents are on the way. Stay tuned for more!</p>
+            
+            <!-- Features List -->
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></div>
+                    <span style="font-size: 13px; color: #888;">Cost Effective Pricing</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></div>
+                    <span style="font-size: 13px; color: #888;">No Gas Required (x402)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></div>
+                    <span style="font-size: 13px; color: #888;">Blockchain Security</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></div>
+                    <span style="font-size: 13px; color: #888;">Monad Testnet Powered</span>
+                </div>
+            </div>
+            
+            <div class="agent-meta" style="border-top-color: rgba(255,255,255,0.08);">
+                <div class="price-block">
+                    <span class="price-lbl" style="color: #555;">Status</span>
+                    <span class="price-val" style="color: #f59e0b;">In Development</span>
+                </div>
+                <div class="arrow-icon" style="border-color: rgba(255,255,255,0.1); opacity: 0.5;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
 <script>
-    // ════════════════════════════════════════════════════════════════════════════
-    // WEB3.AI DASHBOARD - MAIN JAVASCRIPT
-    // ════════════════════════════════════════════════════════════════════════════
-    // Yeh script dashboard ke saare interactions handle karti hai
-    // 
-    // MAIN FEATURES:
-    // 1. View Switching    - Different pages (home, github, audio, etc.) ke beech switch karna
-    // 2. x402 Protocol     - Automatic payment flow with MetaMask
-    // 3. File Upload       - Audio file drag & drop
-    // 4. API Calls         - Backend agents ko call karna
-    // 5. Results Display   - AI analysis results dikhana
-    // ════════════════════════════════════════════════════════════════════════════
-
-    // ┌──────────────────────────────────────────────────────────────────────────┐
-    // │ STATE VARIABLES - Application ki current state store karte hain          │
-    // └──────────────────────────────────────────────────────────────────────────┘
-    
-    let currentGhType = 'summary';      // GitHub analysis type (summary/architecture/issues/pr_review)
-    let selectedAudioFile = null;       // User ne jo audio file select ki (File object)
-    let activeView = 'home';            // Konsa view abhi active hai (home/github/audio/etc.)
-    let lastResultData = null;          // Last result data (download ke liye)
-
-    // ┌──────────────────────────────────────────────────────────────────────────┐
-    // │ PRICES CONFIGURATION - Har agent ki price (MON mein)                     │
-    // │ Yeh prices backend mein bhi same hain (views.py mein)                    │
-    // └──────────────────────────────────────────────────────────────────────────┘
-    
-    const PRICES = {
-        'summary': '0.0002',       // GitHub Summary - Basic overview
-        'architecture': '0.0005', // GitHub Architecture - Deep code analysis
-        'issues': '0.0003',       // GitHub Issues - Bug analysis
-        'pr_review': '0.0008',    // GitHub PR Review - Code review
-        'audio': '0.0011',        // Voice Intelligence - Audio transcription
-        'competescan': '0.0010'   // CompeteScan - Competitor analysis
-    };
-
-    // ┌──────────────────────────────────────────────────────────────────────────┐
-    // │ VIEW SWITCHING FUNCTION - Ek view se dusre view pe switch karta hai      │
-    // │ Views: home, github, audio, competescan, scraper-x402, results, history  │
-    // └──────────────────────────────────────────────────────────────────────────┘
-    
-    function switchView(viewName) {
-        // Step 1: State update karo - konsa view active hai
-        activeView = viewName;
-        console.log(`[VIEW] Switching to: ${viewName}`);
-        
-        // Step 2: Sabhi views hide karo (hidden class add karo)
-        // forEach loop sabhi view IDs pe chalta hai
-        ['home', 'github', 'audio', 'competescan', 'scraper-x402', 'results', 'history'].forEach(v => {
-            document.getElementById(`view-${v}`).classList.add('hidden');
-        });
-        
-        // Step 3: Selected view show karo (hidden class remove karo)
-        document.getElementById(`view-${viewName}`).classList.remove('hidden');
-        
-        // Step 4: Navigation menu update karo (active item highlight)
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'text-white'));
-        
-        // Home button active karo
-        if(viewName === 'home') {
-            document.getElementById('nav-home').classList.add('active', 'text-white');
-        }
-        
-        // History page pe special handling - data load karo
-        if(viewName === 'history') {
-            document.getElementById('nav-history').classList.add('active', 'text-white');
-            loadHistoryData();  // API se history fetch karo
-        }
-        
-        // GitHub view pe button price update karo
-        if(viewName === 'github') {
-            updateGithubButton();
-        }
-    }
-
-    // ┌──────────────────────────────────────────────────────────────────────────┐
-    // │ QUICK VIEW OPENERS - Shortcut functions for common views                 │
-    // └──────────────────────────────────────────────────────────────────────────┘
-    
-    function openGithubForm() { switchView('github'); }  // GitHub form kholo
-    function openAudioForm() { switchView('audio'); }    // Audio form kholo
-
-    // ┌──────────────────────────────────────────────────────────────────────────┐
-    // │ GITHUB TYPE SELECTOR - Analysis type buttons handle karta hai            │
-    // │ Jab user summary/architecture/issues/pr_review click kare                │
-    // └──────────────────────────────────────────────────────────────────────────┘
-    
-    function selectGhType(btn, type) {
-        console.log(`[GITHUB] Type selected: ${type}`);
-        
-        // Step 1: Sabhi buttons ko inactive banao (styling remove karo)
-        document.querySelectorAll('.gh-type-btn').forEach(b => {
-            b.classList.remove('active', 'border-indigo-500/50', 'bg-indigo-500/10', 'text-indigo-300');
-            b.classList.add('border-white/10', 'bg-white/5', 'text-slate-400');
-        });
-        
-        // Step 2: Clicked button ko active banao (styling add karo)
-        btn.classList.add('active', 'border-indigo-500/50', 'bg-indigo-500/10', 'text-indigo-300');
-        btn.classList.remove('border-white/10', 'bg-white/5', 'text-slate-400');
-        
-        // Step 3: State update karo
-        currentGhType = type;
-        
-        // Step 4: Button price update karo
-        updateGithubButton();
-    }
-    
-    // ┌──────────────────────────────────────────────────────────────────────────┐
-    // │ UPDATE GITHUB BUTTON - Execute button pe price dikhata hai               │
-    // └──────────────────────────────────────────────────────────────────────────┘
-    
-    function updateGithubButton() {
-        const price = PRICES[currentGhType];  // Current type ki price nikaalo
-        const btn = document.getElementById('btn-run-github');
-        btn.querySelector('span:last-child').innerText = `~${price} MON`;  // Button pe update karo
-    }
-
-    // --- DRAG DROP ---
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('audioFileInput');
-    const fileNameDisplay = document.getElementById('file-name-display');
-    const btnAudio = document.getElementById('btn-run-audio');
-
-    dropZone.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
-    
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('bg-white/5'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('bg-white/5'));
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('bg-white/5');
-        handleFile(e.dataTransfer.files[0]);
-    });
-
-    function handleFile(file) {
-        if(file && file.type.startsWith('audio/')) {
-            selectedAudioFile = file;
-            fileNameDisplay.innerText = ">> " + file.name;
-            fileNameDisplay.classList.remove('hidden');
-            btnAudio.disabled = false;
-        } else {
-            showToast("Invalid File Type");
-        }
-    }
-
-    // --- WEB3 ---
-    const PAYMENT_RECIPIENT = '0x9497FE4B4ECA41229b9337abAEbCC91eCc7be23B';
-    
-    // Dynamic Pricing
-    function getPriceForAgent() {
-        if(activeView === 'audio') return PRICES['audio'];
-        if(activeView === 'competescan') return PRICES['competescan'];
-        if(activeView === 'github') return PRICES[currentGhType];
-        return '0.0005';
-    }
-
-    async function processPayment(statusFn) {
-        if (!window.ethereum) throw new Error("MetaMask not found");
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        
-        // Force Switch to Monad
-        try {
-             await window.ethereum.request({
-                method: 'wallet_switchEthereumChain',
-                params: [{ chainId: '0x279f' }], // Chain 10143
-            });
-        } catch (switchError) {
-             // Add if missing
-             if (switchError.code === 4902) {
-                await window.ethereum.request({
-                    method: 'wallet_addEthereumChain',
-                    params: [{
-                        chainId: '0x279f',
-                        chainName: 'Monad Testnet',
-                        rpcUrls: ['https://testnet-rpc.monad.xyz'],
-                        nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
-                        blockExplorerUrls: ["http://testnet.monadexplorer.com/"]
-                    }],
-                });
-             }
-        }
-        
-        await provider.send("eth_requestAccounts", []);
-        const signer = provider.getSigner();
-        
-        const price = getPriceForAgent();
-        statusFn(`Signing Transfer: ${price} MON...`);
-        
-        const tx = await signer.sendTransaction({
-            to: PAYMENT_RECIPIENT,
-            value: ethers.utils.parseEther(price)
-        });
-        statusFn("Verifying On-Chain...");
-        await tx.wait();
-        return tx.hash;
-    }
-
-    // ════════════════════════════════════════════════════════════════════════════
-    // x402 API CALL FUNCTIONS - Sabhi AI agents ko call karne ke functions
-    // ════════════════════════════════════════════════════════════════════════════
-    // Yeh functions x402Fetch use karte hain jo automatic payment handle karta hai
-    // Flow: Button Click → x402Fetch → 402 Response → MetaMask → Retry → Result
-    // ════════════════════════════════════════════════════════════════════════════
-
-    // ┌──────────────────────────────────────────────────────────────────────────┐
-    // │ GITHUB AGENT - Repository analysis karta hai                             │
-    // │ Endpoint: /api/x402/github/                                              │
-    // │ Price: 0.0005 MON                                                        │
-    // └──────────────────────────────────────────────────────────────────────────┘
-    
-    async function runGithubAgent() {
-        // Step 1: Input validation - URL check karo
-        const url = document.getElementById('repoUrlInput').value;
-        if (!url) return showToast("Enter Repo URL");
-        
-        console.log(`📦 [GITHUB] Starting analysis for: ${url}`);
-        
-        // Step 2: Loading state show karo
-        setLoading(true, "Initializing x402 GitHub Agent");
-        
-        try {
-            updateLoadingText("🔷 Requesting API (x402 Flow)...");
-            
-            // Step 3: x402Fetch call - yeh automatically 402 handle karega
-            // window.x402Fetch = globally available x402 function (module se)
-            const res = await window.x402Fetch('/api/x402/github/', {
-                method: 'POST',                                        // POST request
-                headers: { 
-                    'Content-Type': 'application/json',                // JSON body
-                    'X-CSRFToken': getCookie('csrftoken')              // Django CSRF protection
-                },
-                body: JSON.stringify({ 
-                    repo_url: url,           // GitHub repository URL
-                    agent_type: currentGhType // Analysis type (summary/architecture/etc.)
-                })
-            });
-            
-            // Step 4: Response parse karo
-            const data = await res.json();
-            if(!res.ok) throw new Error(data.error);  // Error check
-            
-            console.log(`✅ [GITHUB] Analysis complete!`);
-            
-            // Step 5: Results dikhao
-            showResults(data.summary);
-            
-        } catch (e) {
-            console.error(`❌ [GITHUB] Error:`, e);
-            showToast(e.message);
-        } finally {
-            setLoading(false);  // Loading hide karo
-        }
-    }
-
-    // ┌──────────────────────────────────────────────────────────────────────────┐
-    // │ AUDIO/VOICE AGENT - Audio transcription + meeting analysis               │
-    // │ Endpoint: /api/x402/audio/                                               │
-    // │ Price: 0.0011 MON                                                        │
-    // │ Special: FormData use karta hai (file upload ke liye)                    │
-    // └──────────────────────────────────────────────────────────────────────────┘
-    
-    async function runAudioAgent() {
-        // Step 1: File selected hai ya nahi check karo
-        if (!selectedAudioFile) return;
-        
-        console.log(`🎙️ [AUDIO] Starting transcription for: ${selectedAudioFile.name}`);
-        
-        // Step 2: Loading show karo
-        setLoading(true, "Initializing x402 Voice Agent");
-        
-        try {
-            updateLoadingText("🔷 Requesting API (x402 Flow)...");
-            
-            // Step 3: FormData banao (file upload ke liye)
-            // FormData multipart form data bhejta hai (files ke liye required)
-            const formData = new FormData();
-            formData.append('audio_file', selectedAudioFile);  // Audio file add karo
-            
-            // Step 4: x402FetchFormData use karo (file uploads ke liye special function)
-            // Regular x402Fetch FormData ke saath kaam nahi karta
-            const res = await window.x402FetchFormData('/api/x402/audio/', formData);
-            
-            // Step 5: Response parse karo
-            const data = await res.json();
-            if(!res.ok) throw new Error(data.error);
-            
-            console.log(`✅ [AUDIO] Transcription complete!`);
-            
-            // Step 6: Audio results dikhao (tabs wala view)
-            showAudioResults(data);
-
-        } catch (e) {
-            console.error(`❌ [AUDIO] Error:`, e);
-            showToast(e.message);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function runCompeteScan() {
-        const url = document.getElementById('competeUrlInput').value;
-        if (!url) return showToast("Enter Website URL");
-        
-        setLoading(true, "Initializing x402 CompeteScan");
-        try {
-            updateLoadingText("Requesting API (x402 Flow)...");
-            
-            // Use x402 endpoint - payment handled automatically
-            const res = await window.x402Fetch('/api/x402/competescan/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-                body: JSON.stringify({ url: url })
-            });
-            const data = await res.json();
-            if(!res.ok) throw new Error(data.error);
-
-            showCompeteScanResults(data);
-        } catch (e) {
-            showToast(e.message);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    function showResults(contentHTML) {
-        document.getElementById('results-container').innerHTML = contentHTML;
-        document.getElementById('btn-download-json').classList.add('hidden');
-        switchView('results');
-    }
-
-    function showAudioResults(data) {
-        const tabsHtml = `
-            <div class="border-b border-white/10 mb-6 flex gap-4 overflow-x-auto">
-                <button onclick="switchTab('summary')" class="tab-btn px-4 py-2 text-sm font-bold text-indigo-400 border-b-2 border-indigo-500 font-mono" id="tab-summary">SUMMARY</button>
-                <button onclick="switchTab('transcript')" class="tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-white font-mono" id="tab-transcript">TRANSCRIPT</button>
-                <button onclick="switchTab('minutes')" class="tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-white font-mono" id="tab-minutes">MINUTES</button>
-                <button onclick="switchTab('action')" class="tab-btn px-4 py-2 text-sm font-medium text-slate-500 hover:text-white font-mono" id="tab-action">ACTIONS</button>
-            </div>
-            
-            <div id="content-summary" class="tab-content animate-fade-in block">
-               ${data.summary ? data.summary : '<p class="text-slate-500 font-mono">No summary available.</p>'}
-            </div>
-
-            <div id="content-transcript" class="tab-content hidden animate-fade-in">
-                <div class="space-y-6 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
-                    ${renderTranscript(data.utterances, data.transcript)}
-                </div>
-            </div>
-
-            <div id="content-minutes" class="tab-content hidden animate-fade-in">
-               ${data.minutes ? data.minutes : '<p class="text-slate-500 font-mono">No minutes available.</p>'}
-            </div>
-
-            <div id="content-action" class="tab-content hidden animate-fade-in space-y-6">
-                <div class="bg-emerald-500/10 p-6 rounded-xl border border-emerald-500/20">
-                    <h3 class="font-bold text-emerald-400 mb-4 flex items-center gap-2 font-mono">>> TO_DO_LIST</h3>
-                    ${data.todos || 'None'}
-                </div>
-                <div class="bg-pink-500/10 p-6 rounded-xl border border-pink-500/20">
-                    <h3 class="font-bold text-pink-400 mb-4 flex items-center gap-2 font-mono">>> DEADLINES</h3>
-                    ${data.deadlines || 'None'}
-                </div>
-            </div>
-        `;
-        document.getElementById('results-container').innerHTML = tabsHtml;
-        switchView('results');
-    }
-
-    function showCompeteScanResults(data) {
-        lastResultData = data;
-        document.getElementById('btn-download-json').classList.remove('hidden');
-
-        // Summary
-        const insightsHtml = (data.summary?.key_insights || []).map(i => 
-            `<span class="px-3 py-1 rounded-lg bg-orange-500/10 text-orange-300 text-xs border border-orange-500/20 mr-2 mb-2 inline-block">${i}</span>`
-        ).join('');
-
-        // Pricing Plans
-        const plans = (data.pricing?.plans || []).map(p => 
-            `<div class="flex justify-between border-b border-white/5 pb-2 mb-2 last:border-0 last:mb-0 last:pb-0"><span class="text-white font-medium">${p.name}</span> <span class="text-orange-400 font-mono">${p.price}</span></div>`
-        ).join('');
-
-        // SWOT
-        const strengths = (data.strengths_weaknesses?.strengths || []).map(s => `<li class="text-slate-300 text-sm mb-1">${s}</li>`).join('');
-        const weaknesses = (data.strengths_weaknesses?.weaknesses || []).map(s => `<li class="text-slate-300 text-sm mb-1">${s}</li>`).join('');
-
-        // Experiments
-        const expHtml = (data.growth_experiments || []).map(ex => `
-            <div class="p-4 bg-white/5 rounded-xl border border-white/5 flex gap-4 items-start mb-3">
-                <div class="mt-1.5 w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_5px_blue] flex-shrink-0"></div>
-                <div>
-                    <h5 class="text-slate-200 text-sm font-bold mb-1">${ex.experiment}</h5>
-                     <p class="text-slate-400 text-xs mb-1">${ex.details || ''}</p>
-                    <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider bg-white/5 px-2 py-0.5 rounded">Impact: ${ex.impact}</span>
-                </div>
-            </div>
-        `).join('');
-
-        const html = `
-            <div class="space-y-8 animate-fade-in">
-                <!-- Header -->
-                <div class="glass-panel p-8 rounded-2xl border-l-4 border-orange-500">
-                    <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        Strategic Summary
-                    </h3>
-                    <p class="text-lg text-slate-200 mb-4 font-medium">${data.summary?.one_line || "Analysis Complete"}</p>
-                    <div class="">${insightsHtml}</div>
-                </div>
-
-                <!-- 2 Col Grid -->
-                <div class="grid md:grid-cols-2 gap-6">
-                    <div class="glass-panel p-6 rounded-2xl bg-white/[0.02]">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase mb-4 tracking-widest flex items-center gap-2">Business Overview</h4>
-                        <div class="space-y-2 text-sm">
-                            <p><span class="text-slate-500 w-16 inline-block">Type:</span> <span class="text-slate-300">${data.business_overview?.type || '-'}</span></p>
-                            <p><span class="text-slate-500 w-16 inline-block">Region:</span> <span class="text-slate-300">${data.business_overview?.region || '-'}</span></p>
-                            <p><span class="text-slate-500 w-16 inline-block">ICP:</span> <span class="text-slate-300">${data.business_overview?.icp || '-'}</span></p>
-                            <p class="mt-4 text-slate-400 italic">"${data.business_overview?.pitch || 'No pitch detected'}"</p>
-                        </div>
-                    </div>
-                    <div class="glass-panel p-6 rounded-2xl bg-white/[0.02]">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase mb-4 tracking-widest flex items-center gap-2">Pricing Model: <span class="text-white ml-auto border border-white/10 px-2 rounded">${data.pricing?.model || '-'}</span></h4>
-                        <div class="bg-black/20 p-4 rounded-xl border border-white/5 space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
-                            ${plans || '<p class="text-slate-500 text-sm">No specific plans found.</p>'}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SWOT -->
-                <div class="grid md:grid-cols-2 gap-6">
-                    <div class="glass-panel p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5">
-                        <h4 class="text-xs font-bold text-emerald-400 uppercase mb-4 tracking-widest">Strengths</h4>
-                        <ul class="list-disc list-inside space-y-1">${strengths}</ul>
-                    </div>
-                    <div class="glass-panel p-6 rounded-2xl border border-red-500/20 bg-red-500/5">
-                        <h4 class="text-xs font-bold text-red-400 uppercase mb-4 tracking-widest">Weaknesses</h4>
-                        <ul class="list-disc list-inside space-y-1">${weaknesses}</ul>
-                    </div>
-                </div>
-
-                <!-- Experiments -->
-                <div class="glass-panel p-8 rounded-2xl">
-                    <h3 class="text-xl font-bold text-white mb-6">🚀 Recommended Growth Experiments</h3>
-                    <div class="">${expHtml}</div>
-                </div>
-            </div>
-        `;
-
-        document.getElementById('results-container').innerHTML = html;
-        switchView('results');
-    }
-
-    // renderTranscript with different speaker/colors
-    function renderTranscript(utterances, fallbackText) {
-        if (!utterances || utterances.length === 0) {
-            return `<p class="text-slate-500 font-mono">${fallbackText || 'No transcript available.'}</p>`;
-        }
-        
-        return utterances.map((u, i) => {
-             const spk = u.speaker || "Unknown";
-             const isA = String(spk).charCodeAt(0) % 2 === 0;
-             const align = isA ? "ml-auto items-end" : "mr-auto items-start";
-             const bg = isA ? "bg-indigo-600 text-white" : "bg-slate-700 text-slate-200";
-             const label = isA ? "text-indigo-400" : "text-slate-400";
-             
-             return `
-                <div class="flex flex-col ${align} max-w-[80%] mb-2 chat-bubble">
-                    <span class="text-[10px] font-bold ${label} mb-1 px-1 uppercase tracking-widest">${spk}</span>
-                    <div class="${bg} p-4 rounded-2xl ${isA ? 'rounded-tr-none' : 'rounded-tl-none'} shadow-md text-sm leading-relaxed">
-                        ${u.text}
-                    </div>
-                </div>
-             `;
-        }).join('');
-    }
-
-    window.switchTab = function(tabName) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-        document.querySelectorAll('.tab-btn').forEach(el => {
-            el.classList.remove('text-indigo-400', 'border-b-2', 'border-indigo-500');
-            el.classList.add('text-slate-500');
-        });
-
-        document.getElementById(`content-${tabName}`).classList.remove('hidden');
-        const btn = document.getElementById(`tab-${tabName}`);
-        btn.classList.add('text-indigo-400', 'border-b-2', 'border-indigo-500');
-        btn.classList.remove('text-slate-500');
-    }
-
-    // --- HELPERS ---
-    function setLoading(on, text="PROCESSING") {
-        const el = document.getElementById('loading-overlay');
-        const txt = document.getElementById('loading-text');
-        if(on) { el.classList.remove('hidden'); txt.innerText = text.toUpperCase(); }
-        else { el.classList.add('hidden'); }
-    }
-    
-    function updateLoadingText(t) { document.getElementById('loading-text').innerText = t.toUpperCase(); }
-
-    function showToast(msg) {
-        const el = document.getElementById('toast');
-        document.getElementById('toast-msg').innerText = msg;
-        el.classList.remove('translate-y-20', 'opacity-0');
-        setTimeout(() => el.classList.add('translate-y-20', 'opacity-0'), 3000);
-    }
-    
-    function getCookie(name) {
-        if (!document.cookie) return null;
-        const xsrf = document.cookie.split('; ').find(row => row.startsWith(name + '='));
-        return xsrf ? decodeURIComponent(xsrf.split('=')[1]) : null;
-    }
-
-    // --- CHARTS & INIT ---
-     let chartInstance1, chartInstance2;
-
-    async function loadHistoryData() {
-        const res = await fetch('/api/stats/');
-        if(!res.ok) return;
-        const data = await res.json();
-
-        document.getElementById('stat-total-spent').innerText = data.total_spent + " MON";
-        document.getElementById('stat-total-files').innerText = data.history.length;
-        
-        const tbody = document.getElementById('history-table-body');
-        tbody.innerHTML = data.history.map(item => `
-            <tr class="hover:bg-white/5 transition">
-                <td class="px-6 py-4 text-slate-400 font-mono text-xs">${item.date}</td>
-                 <td class="px-6 py-4"><span class="bg-indigo-500/20 text-indigo-300 font-bold px-2 py-1 rounded text-xs border border-indigo-500/30">${item.agent}</span></td>
-                <td class="px-6 py-4 font-mono text-xs text-slate-500 truncate max-w-[200px]" title="${item.input}">${item.input}</td>
-                <td class="px-6 py-4 font-mono text-indigo-400">${item.cost}</td>
-                <td class="px-6 py-4"><span class="text-emerald-400 text-xs font-bold uppercase tracking-wider">● CONFIRMED</span></td>
-                <td class="px-6 py-4 text-right">
-                    <button onclick="viewHistoryItem(${item.id})" class="text-white hover:text-indigo-400 font-bold text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded transition uppercase">Open</button>
-                </td>
-            </tr>
-        `).join('');
-
-        initCharts(data.spending, data.services);
-    }
-
-    window.viewHistoryItem = async function(id) {
-        setLoading(true, "FETCHING_DATA");
-        try {
-            const res = await fetch(`/api/tx/${id}/`);
-            if(!res.ok) throw new Error("Load Failed");
-            const data = await res.json();
-            
-            if(data.category === 'AUDIO') {
-                showAudioResults(data.output);
-            } else if (data.category === 'COMPETESCAN') {
-                showCompeteScanResults(data.output);
-            } else {
-                showResults(data.output.summary || JSON.stringify(data.output));
-            }
-        } catch(e) {
-            showToast(e.message);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    function initCharts(spendingData, servicesData) {
-        const ctx1 = document.getElementById('chartSpending').getContext('2d');
-        const ctx2 = document.getElementById('chartServices').getContext('2d');
-
-        if(chartInstance1) chartInstance1.destroy();
-        if(chartInstance2) chartInstance2.destroy();
-
-        Chart.defaults.color = '#94a3b8';
-        Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
-
-        chartInstance1 = new Chart(ctx1, {
-            type: 'line',
-            data: {
-                labels: Object.keys(spendingData),
-                datasets: [{
-                    label: 'ETH',
-                    data: Object.values(spendingData),
-                    borderColor: '#6366f1',
-                    backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true,
-                    pointBackgroundColor: '#fff'
-                }]
-            },
-            options: { 
-                responsive: true, 
-                plugins: { legend: { display: false } },
-                scales: { 
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' } },
-                    x: { grid: { display: false } }
-                }
-            }
-        });
-
-        chartInstance2 = new Chart(ctx2, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(servicesData),
-                datasets: [{
-                    data: Object.values(servicesData),
-                    backgroundColor: ['#6366f1', '#a855f7'],
-                    borderWidth: 0
-                }]
-            },
-            options: { cutout: '75%', plugins: { legend: { position: 'right' } } }
-        });
-    }
-
-    function downloadJson() {
-        if(!lastResultData) return;
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(lastResultData, null, 2));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "competescan_report.json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-    }
-
-    // Init Balance load
-     (async () => {
-        try {
-            if(window.ethereum) {
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
-                const accts = await provider.listAccounts();
-                if(accts.length > 0) {
-                     const bal = await provider.getBalance(accts[0]);
-                     document.getElementById('balanceDisplay').innerText = parseFloat(ethers.utils.formatEther(bal)).toFixed(4) + " ETH";
-                }
-            }
-        } catch(e) {}
-    })();
-
-</script>
-
-<!-- ════════════════════════════════════════════════════════════════════════════ -->
-<!-- x402 PROTOCOL MODULE - Thirdweb SDK Integration                              -->
-<!-- ════════════════════════════════════════════════════════════════════════════ -->
-<!-- 
-YEH MODULE x402 PAYMENT PROTOCOL IMPLEMENT KARTA HAI
-
-x402 PROTOCOL KYA HAI?
-- HTTP 402 = "Payment Required" status code
-- Server 402 return karta hai jab payment chahiye
-- Client automatically payment karta hai aur retry karta hai
-
-FLOW DIAGRAM:
-┌─────────────────────────────────────────────────────────────────────┐
-│ 1. fetch('/api/x402/scraper/')     → Server ko request bhejo       │
-│ 2. Server returns HTTP 402         ← Payment information milti hai  │
-│ 3. x402Fetch sees 402              → Payment requirements parse karo│
-│ 4. MetaMask popup opens            → User ko payment confirm karo   │
-│ 5. User signs transaction          → Blockchain pe tx broadcast     │
-│ 6. fetch (with x-payment header)   → Same request, ab payment ke sath│
-│ 7. Server processes request        ← Data return hoti hai           │
-└─────────────────────────────────────────────────────────────────────┘
--->
-
-<script type="module">
-    // ════════════════════════════════════════════════════════════════════════════
-    // x402 PROTOCOL MODULE - MAIN IMPLEMENTATION
-    // ════════════════════════════════════════════════════════════════════════════
-    // Yeh ES6 module hai (type="module" attribute dekho)
-    // Isliye import/export use kar sakte hain
-    // ════════════════════════════════════════════════════════════════════════════
-    
-    // ┌──────────────────────────────────────────────────────────────────────────┐
-    // │ THIRDWEB IMPORTS - Thirdweb SDK libraries import karo                    │
-    // │ ESM CDN se directly browser mein import hota hai (no npm needed)         │
-    // └──────────────────────────────────────────────────────────────────────────┘
-    
-    import { createThirdwebClient } from "https://esm.sh/thirdweb@5";
-    import { createWallet } from "https://esm.sh/thirdweb@5/wallets";
-    
-    // ┌──────────────────────────────────────────────────────────────────────────┐
-    // │ THIRDWEB CLIENT ID - Yeh Thirdweb Dashboard se lena hoga                 │
-    // │ Free signup: https://thirdweb.com/dashboard                              │
-    // │ Client ID = API key jaisa hai (identifies your app)                      │
-    // └──────────────────────────────────────────────────────────────────────────┘
-    
-    const THIRDWEB_CLIENT_ID = "YOUR_THIRDWEB_CLIENT_ID"; // TODO: Apna Client ID daalo
-    
-    // ┌──────────────────────────────────────────────────────────────────────────┐
-    // │ x402 CONFIGURATION - Blockchain aur payment settings                     │
-    // │ Yeh settings backend (views.py) se match honi chahiye                    │
-    // └──────────────────────────────────────────────────────────────────────────┘
-    
-    const X402_CONFIG = {
-        chainId: 10143,                                        // Monad Testnet chain ID
-        paymentAddress: "0x9497FE4B4ECA41229b9337abAEbCC91eCc7be23B",  // Server wallet
-        rpcUrl: "https://testnet-rpc.monad.xyz"                // Blockchain RPC URL
-    };
-    
-    console.log("🔧 [x402] Configuration loaded:", X402_CONFIG);
-    
-    // ┌──────────────────────────────────────────────────────────────────────────┐
-    // │ THIRDWEB INITIALIZATION - Client aur wallet setup karo                   │
-    // └──────────────────────────────────────────────────────────────────────────┘
-    
-    let thirdwebClient = null;    // Thirdweb client instance
-    let metamaskWallet = null;    // MetaMask wallet instance
-    
-    try {
-        // Thirdweb client banao (API calls ke liye)
-        thirdwebClient = createThirdwebClient({ 
-            clientId: THIRDWEB_CLIENT_ID 
-        });
-        
-        // MetaMask wallet initialize karo
-        // "io.metamask" = MetaMask ka identifier hai
-        metamaskWallet = createWallet("io.metamask");
-        console.log("✅ [x402] Thirdweb client initialized successfully");
-    } catch (e) {
-        console.error("❌ [x402] Failed to initialize Thirdweb:", e);
-    }
-    
-    // ┌──────────────────────────────────────────────────────────────────────────┐
-    // │ x402 CONSOLE LOGGING - UI console mein colorful logs dikhata hai         │
-    // │ Scraper page pe ek console box hai jisme ye logs dikhte hain             │
-    // └──────────────────────────────────────────────────────────────────────────┘
-    
-    function x402Log(message, type = 'info') {
-        // UI console elements dhundho
-        const consoleEl = document.getElementById('x402-console');     // Console container
-        const logEl = document.getElementById('x402-console-log');     // Log messages area
-        
-        // Agar elements hain toh UI mein log karo
-        if (consoleEl && logEl) {
-            // Console visible banao
-            consoleEl.classList.remove('hidden');
-            
-            // Color mapping - message type ke hisaab se color
-            const colors = {
-                'info': 'text-slate-400',      // Gray - normal info
-                'success': 'text-emerald-400', // Green - success
-                'error': 'text-red-400',       // Red - error
-                'payment': 'text-cyan-400',    // Cyan - payment related
-                '402': 'text-amber-400'        // Yellow/Orange - 402 status
-            };
-            
-            // Timestamp add karo
-            const timestamp = new Date().toLocaleTimeString();
-            
-            // HTML append karo with color
-            logEl.innerHTML += `<p class="${colors[type] || 'text-slate-400'}">[${timestamp}] ${message}</p>`;
-            
-            // Auto scroll to bottom
-            consoleEl.scrollTop = consoleEl.scrollHeight;
-        }
-        
-        // Browser console mein bhi log karo (debugging ke liye)
-        console.log(`🔷 [x402] ${message}`);
-    }
-    
-    // ┌──────────────────────────────────────────────────────────────────────────┐
-    // │ x402 FETCH WRAPPER - Main payment handling function                       │
-    // │ Yeh function automatic 402 detection aur payment karta hai                │
-    // │ Normal fetch ki jagah isko use karo for paid APIs                         │
-    // └──────────────────────────────────────────────────────────────────────────┘
-    /*
-    COMPLETE FLOW:
-    ══════════════
-    1. fetch() → Server ko normal request bhejo
-    2. 402?    → Agar 402 aaya toh payment requirements parse karo
-    3. MetaMask → User ko payment approve karwao
-    4. Wait    → Transaction confirm hone ka wait karo
-    5. Retry   → Same request x-payment header ke saath
-    6. Return  → Final response return karo
-    */
-    
-    async function x402Fetch(url, options = {}) {
-        // ═══════════════════════════════════════════════════════════════════
-        // STEP 1: Initial Request - Pehle bina payment ke try karo
-        // ═══════════════════════════════════════════════════════════════════
-        x402Log("🚀 Starting x402 request to " + url, 'info');
-        
-        const response = await fetch(url, options);  // Normal fetch call
-        
-        // ═══════════════════════════════════════════════════════════════════
-        // STEP 2: Check for 402 - Kya payment chahiye?
-        // ═══════════════════════════════════════════════════════════════════
-        if (response.status === 402) {
-            // 🔴 402 aaya! Payment Required!
-            x402Log("⚠️ HTTP 402 - Payment Required!", '402');
-            
-            // Response body se payment details nikaalo
-            const paymentData = await response.json();        // JSON parse
-            const requirements = paymentData.paymentRequirements;  // Requirements object
-            
-            // Console mein payment info dikhao
-            x402Log(`💵 Amount: ${requirements.amount} ${requirements.asset}`, 'payment');
-            x402Log(`🔗 Chain: ${requirements.chain} (${requirements.chainId})`, 'payment');
-            x402Log(`👛 Recipient: ${requirements.payTo.substring(0, 10)}...`, 'payment');
-            
-            // ═══════════════════════════════════════════════════════════════
-            // STEP 3: MetaMask Payment - Wallet se paisa bhejo
-            // ═══════════════════════════════════════════════════════════════
-            x402Log("🔐 Opening MetaMask wallet...", 'payment');
-            
-            // Check karo MetaMask installed hai ya nahi
-            if (!window.ethereum) {
-                throw new Error("❌ MetaMask not found! Please install MetaMask extension.");
-            }
-            
-            // Ensure correct network
-            try {
-                await window.ethereum.request({
-                    method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: '0x' + parseInt(requirements.chainId).toString(16) }],
-                });
-            } catch (switchError) {
-                if (switchError.code === 4902) {
-                    await window.ethereum.request({
-                        method: 'wallet_addEthereumChain',
-                        params: [{
-                            chainId: '0x' + parseInt(requirements.chainId).toString(16),
-                            chainName: 'Monad Testnet',
-                            rpcUrls: ['https://testnet-rpc.monad.xyz'],
-                            nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
-                            blockExplorerUrls: ["https://testnet.monadexplorer.com/"]
-                        }],
-                    });
-                }
-            }
-            
-            // Get provider and signer
+    // Update dashboard balance separately
+    async function updateDashBalance() {
+        if (window.ethereum) {
             const provider = new ethers.providers.Web3Provider(window.ethereum);
-            await provider.send("eth_requestAccounts", []);
             const signer = provider.getSigner();
-            
-            // Send the payment transaction
-            x402Log("Sending payment transaction...", 'payment');
-            
-            const tx = await signer.sendTransaction({
-                to: requirements.payTo,
-                value: ethers.utils.parseEther(requirements.amount)
-            });
-            
-            x402Log(`Transaction sent: ${tx.hash.substring(0, 20)}...`, 'success');
-            x402Log("Waiting for confirmation...", 'info');
-            
-            await tx.wait();
-            x402Log("Transaction confirmed!", 'success');
-            
-            // Step 4: Retry the request with the payment header
-            x402Log("Retrying request with x-payment header...", 'info');
-            
-            const retryOptions = {
-                ...options,
-                headers: {
-                    ...options.headers,
-                    'x-payment': tx.hash // Include tx hash as payment proof
-                }
-            };
-            
-            const retryResponse = await fetch(url, retryOptions);
-            x402Log("Request completed successfully!", 'success');
-            
-            return retryResponse;
+            const address = await signer.getAddress();
+            const balance = await provider.getBalance(address);
+            document.getElementById('dashBalance').innerText = parseFloat(ethers.utils.formatEther(balance)).toFixed(4) + " MON";
         }
-        
-        // If no 402, return the original response
-        return response;
     }
-    
-    // Make x402Fetch available globally
-    window.x402Fetch = x402Fetch;
-    
-    // x402 Fetch for FormData (file uploads)
-    // Handles 402 -> Payment -> Retry with multipart form data
-    window.x402FetchFormData = async function(url, formData) {
-        console.log("[x402] FormData request to " + url);
-        
-        // Step 1: Make initial request
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCookie('csrftoken') },
-            body: formData
-        });
-        
-        // Step 2: Check if we got a 402 Payment Required
-        if (response.status === 402) {
-            console.log("[x402] FormData 402 - Payment Required!");
-            
-            const paymentData = await response.json();
-            const requirements = paymentData.paymentRequirements;
-            
-            if (!window.ethereum) {
-                throw new Error("MetaMask not found");
-            }
-            
-            // Switch network
-            try {
-                await window.ethereum.request({
-                    method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: '0x' + parseInt(requirements.chainId).toString(16) }],
-                });
-            } catch (switchError) {
-                if (switchError.code === 4902) {
-                    await window.ethereum.request({
-                        method: 'wallet_addEthereumChain',
-                        params: [{
-                            chainId: '0x' + parseInt(requirements.chainId).toString(16),
-                            chainName: 'Monad Testnet',
-                            rpcUrls: ['https://testnet-rpc.monad.xyz'],
-                            nativeCurrency: { name: "Monad", symbol: "MON", decimals: 18 },
-                            blockExplorerUrls: ["https://testnet.monadexplorer.com/"]
-                        }],
-                    });
-                }
-            }
-            
-            // Send payment
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            await provider.send("eth_requestAccounts", []);
-            const signer = provider.getSigner();
-            
-            const tx = await signer.sendTransaction({
-                to: requirements.payTo,
-                value: ethers.utils.parseEther(requirements.amount)
-            });
-            
-            console.log("[x402] Payment tx:", tx.hash);
-            await tx.wait();
-            console.log("[x402] Payment confirmed!");
-            
-            // Step 3: Retry with x-payment header (need to recreate FormData for file upload)
-            const retryResponse = await fetch(url, {
-                method: 'POST',
-                headers: { 
-                    'X-CSRFToken': getCookie('csrftoken'),
-                    'x-payment': tx.hash
-                },
-                body: formData
-            });
-            
-            return retryResponse;
-        }
-        
-        return response;
-    };
-    
-    // Make the x402 scraper function available globally
-    window.runScraperX402 = async function() {
-        const url = document.getElementById('scraperX402UrlInput').value;
-        if (!url) {
-            showToast("Enter a URL to scrape");
-            return;
-        }
-        
-        const btn = document.getElementById('btn-run-scraper-x402');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="animate-spin">⚡</span> Processing x402 Flow...';
-        
-        // Clear previous console
-        document.getElementById('x402-console-log').innerHTML = '';
-        
-        try {
-            x402Log("Starting x402 Web Scraper Agent", 'info');
-            x402Log(`Target URL: ${url}`, 'info');
-            
-            // Use our x402 fetch wrapper
-            const response = await x402Fetch('/api/x402/scraper/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({ url: url })
-            });
-            
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error || 'Request failed');
-            }
-            
-            x402Log("Scraping complete!", 'success');
-            
-            // Show results
-            showX402Results(data);
-            
-        } catch (e) {
-            x402Log(`Error: ${e.message}`, 'error');
-            showToast(e.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = `
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                <span>Execute with x402 Payment</span>
-                <span class="bg-black/20 px-2 py-0.5 rounded text-xs font-mono">0.0001 MON</span>
-            `;
-        }
-    };
-    
-    // Helper to show x402 results
-    function showX402Results(data) {
-        const container = document.getElementById('results-container');
-        container.innerHTML = `
-            <div class="space-y-6 animate-fade-in">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="w-12 h-12 bg-cyan-500/20 rounded-2xl flex items-center justify-center border border-cyan-500/30">
-                        <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-bold text-white">x402 Payment Successful</h3>
-                        <p class="text-sm text-slate-500 font-mono">Scraping completed via x402 protocol</p>
-                    </div>
-                </div>
-                
-                <div class="glass-panel p-6 rounded-xl border border-cyan-500/20">
-                    <p class="text-xs text-cyan-400 font-bold uppercase tracking-widest mb-3">Scraped URL</p>
-                    <p class="text-white font-mono text-sm break-all">${data.data?.url || 'N/A'}</p>
-                </div>
-                
-                <div class="glass-panel p-6 rounded-xl">
-                    <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-3">Content Length</p>
-                    <p class="text-2xl font-bold text-white">${data.data?.content_length?.toLocaleString() || 0} <span class="text-sm text-slate-500 font-normal">characters</span></p>
-                </div>
-                
-                <div class="glass-panel p-6 rounded-xl">
-                    <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-3">Content Preview</p>
-                    <pre class="text-sm text-slate-300 whitespace-pre-wrap font-mono max-h-80 overflow-y-auto bg-black/30 p-4 rounded-lg">${escapeHtml(data.data?.preview || 'No content')}</pre>
-                </div>
-            </div>
-        `;
-        
-        switchView('results');
-    }
-    
-    // HTML escape helper
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-    
-    console.log("[x402] x402 Protocol module loaded successfully");
+    updateDashBalance();
 </script>
-</body>
-</html>
+{% endblock %}

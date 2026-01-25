@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Voice Intelligence{% endblock %}
+{% block nav_audio %}active{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 900px; margin: 0 auto;">
+    
+    <!-- Header -->
+    <div style="margin-bottom: 32px; border-bottom: 1px solid var(--border-light); padding-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+            <div style="width: 48px; height: 48px; background: var(--bg-card); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text-main);">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+            </div>
+            <div>
+                <h1 class="font-bold text-xl">Voice Intelligence</h1>
+                <p class="text-muted text-sm">Meeting transcription & speaker analysis with x402 payment.</p>
+            </div>
+        </div>
+        <div class="font-mono text-xs text-dim">Using x402 Protocol • 0.0011 MON per request</div>
+    </div>
+
+    <!-- Input Form -->
+    <form id="audioForm">
+        <div class="input-group">
+            <div class="file-drop-area" id="dropZone">
+                <span class="file-msg">Drag & drop audio here or click to upload</span>
+                <input class="file-input" type="file" id="audioFile" accept="audio/*,video/*" required>
+            </div>
+            
+            <!-- Loading Bar (Hidden by default) -->
+            <div id="uploadProgress" style="display: none; width: 100%; margin-top: 16px;">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; color: var(--text-muted);">
+                    <span>Uploading & Analyzing...</span>
+                    <!-- <span id="progressText">0%</span> -->
+                </div>
+                <div style="width: 100%; height: 4px; background: var(--bg-hover); border-radius: 2px; overflow: hidden;">
+                    <div class="progress-bar-anim"></div>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%;" id="submitBtn">
+            Transcribe & Analyze
+        </button>
+    </form>
+    
+    <!-- Results Area -->
+    <div id="resultArea" style="display: none; margin-top: 40px;">
+        
+        <!-- Results Tabs -->
+        <div class="tabs-nav">
+            <button onclick="switchResultTab('summary')" id="tab-res-summary" class="tab-btn active">Summary</button>
+            <button onclick="switchResultTab('chat')" id="tab-res-chat" class="tab-btn">Transcript (Chat)</button>
+            <button onclick="switchResultTab('actions')" id="tab-res-actions" class="tab-btn">Action Items</button>
+        </div>
+
+        <!-- 1. Summary View -->
+        <div id="content-summary" class="result-content" style="display: block;">
+            <div id="summaryContent" class="p-4 bg-card rounded-lg border border-light text-muted mb-6" style="line-height: 1.6;"></div>
+        </div>
+
+        <!-- 2. Chat View -->
+        <div id="content-chat" class="result-content" style="display: none;">
+            <div id="chatContainer" class="chat-container">
+                <!-- Chat bubbles will go here -->
+            </div>
+        </div>
+
+        <!-- 3. Action Items View -->
+        <div id="content-actions" class="result-content" style="display: none;">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="panel bg-card p-4">
+                    <h4 class="font-bold text-md mb-4 text-main">To-Do List</h4>
+                    <div id="todosContent" class="text-sm text-muted space-y-2"></div>
+                </div>
+                <div class="panel bg-card p-4">
+                    <h4 class="font-bold text-md mb-4 text-main">Deadlines</h4>
+                    <div id="deadlinesContent" class="text-sm text-muted space-y-2"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+    /* File Upload Styles */
+    .file-drop-area {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 40px;
+        border: 2px dashed var(--border-light);
+        border-radius: 12px;
+        transition: 0.2s;
+        cursor: pointer;
+        background: var(--bg-body);
+    }
+    .file-drop-area:hover, .file-drop-area.dragover {
+        border-color: var(--text-main);
+        background: var(--bg-hover);
+    }
+    .file-msg { font-size: 14px; color: var(--text-muted); pointer-events: none; }
+    .file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    
+    /* Progress Animation */
+    .progress-bar-anim {
+        height: 100%;
+        width: 30%;
+        background: var(--text-main);
+        animation: loading 1.5s infinite ease-in-out;
+    }
+    @keyframes loading {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(400%); }
+    }
+
+    /* Tabs */
+    .tabs-nav {
+        display: flex;
+        gap: 24px;
+        border-bottom: 1px solid var(--border-light);
+        margin-bottom: 24px;
+    }
+    .tab-btn {
+        padding: 12px 0;
+        font-size: 14px;
+        color: var(--text-muted);
+        border-bottom: 2px solid transparent;
+        transition: 0.2s;
+    }
+    .tab-btn:hover { color: var(--text-main); }
+    .tab-btn.active {
+        color: var(--text-main);
+        border-bottom-color: var(--text-main);
+        font-weight: 500;
+    }
+
+    /* Chat UI */
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        max-height: 500px;
+        overflow-y: auto;
+        padding-right: 8px;
+    }
+    .chat-bubble {
+        display: flex;
+        flex-direction: column;
+        max-width: 80%;
+    }
+    .chat-bubble.speaker-A { align-self: flex-start; }
+    .chat-bubble.speaker-B { align-self: flex-end; align-items: flex-end; }
+    
+    .speaker-label {
+        font-size: 11px;
+        color: var(--text-dim);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .bubble-content {
+        background: var(--bg-card);
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--border-light);
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--text-main);
+    }
+    .chat-bubble.speaker-B .bubble-content {
+        background: var(--bg-hover);
+        border-color: var(--border-hover);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tab Logic
+    window.switchResultTab = function(tabName) {
+        document.querySelectorAll('.result-content').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById('content-' + tabName).style.display = 'block';
+        document.getElementById('tab-res-' + tabName).classList.add('active');
+    }
+
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('audioFile');
+    const submitBtn = document.getElementById('submitBtn');
+    const uploadProgress = document.getElementById('uploadProgress');
+
+    // Visual Feedback for File Selection
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            dropZone.innerHTML = `
+                <div style="text-align: center;">
+                    <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-bottom: 8px; margin: 0 auto;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+                    <div style="font-weight: 500; font-size: 14px;">${file.name}</div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">${(file.size / 1024 / 1024).toFixed(2)} MB</div>
+                </div>
+                <input class="file-input" type="file" id="audioFile" accept="audio/*,video/*" required>
+            `;
+            // Re-bind input (since we overwrote HTML)
+            // Ah, overwriting innerHTML removes the input element we referenced! 
+            // Better to update text span instead. But for now I added input back.
+            // But 'fileInput' ref is dead. I must get it again or structure differently.
+            // Let's fix this in structure: don't overwrite input, just hide msg and show file info.
+        }
+    });
+
+    // RE-WRITING FILE INPUT LOGIC TO BE SAFER
+    // We will use a separate container for content inside dropzone
+    dropZone.innerHTML = `
+        <span class="file-msg">Drag & drop audio here or click to upload</span>
+        <div id="selectedFileInfo" style="display:none; text-align:center;">
+             <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin: 0 auto 8px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+             <div id="selFileName" class="font-medium text-sm"></div>
+        </div>
+        <input class="file-input" type="file" id="audioFile" accept="audio/*,video/*" required>
+    `;
+    
+    // Re-bind logic
+    document.getElementById('audioFile').addEventListener('change', function() {
+        if (this.files.length > 0) {
+            dropZone.querySelector('.file-msg').style.display = 'none';
+            const info = document.getElementById('selectedFileInfo');
+            info.style.display = 'block';
+            document.getElementById('selFileName').innerText = this.files[0].name;
+        }
+    });
+
+    // Form Subimssion
+    document.getElementById('audioForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const fileInput = document.getElementById('audioFile');
+        if (fileInput.files.length === 0) return;
+
+        // UI Loading State
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Processing...";
+        uploadProgress.style.display = 'block';
+        document.getElementById('resultArea').style.display = 'none';
+
+        const formData = new FormData();
+        formData.append('audio_file', fileInput.files[0]);
+
+        try {
+            const response = await window.x402FetchFormData('/api/x402/audio/', formData);
+
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById('resultArea').style.display = 'block';
+                
+                // 1. Summary
+                document.getElementById('summaryContent').innerHTML = data.summary || "No summary available.";
+                
+                // 2. Action Items
+                document.getElementById('todosContent').innerHTML = data.todos || "None.";
+                document.getElementById('deadlinesContent').innerHTML = data.deadlines || "None.";
+                
+                // 3. Transcript / Chat
+                renderChat(data.utterances, data.transcript);
+                
+                // Scroll to results
+                document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth' });
+
+            } else {
+                alert("Failed: " + response.statusText);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error processing audio.");
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Transcribe & Analyze";
+            uploadProgress.style.display = 'none';
+        }
+    });
+
+    function renderChat(utterances, fullText) {
+        const container = document.getElementById('chatContainer');
+        container.innerHTML = '';
+
+        // Add Timestamp Header
+        const dateHeader = document.createElement('div');
+        dateHeader.style.textAlign = 'center';
+        dateHeader.style.fontSize = '12px';
+        dateHeader.style.color = 'var(--text-dim)';
+        dateHeader.style.margin = '16px 0';
+        // Mock date or use current
+        const now = new Date();
+        dateHeader.innerText = `Today, ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        container.appendChild(dateHeader);
+
+        if (utterances && utterances.length > 0) {
+            utterances.forEach((u, index) => {
+                const bubble = document.createElement('div');
+                // Alternating speakers logic or use actual speaker label if available?
+                // ElevenLabs usually returns speaker info if diarize=true?
+                // Check API response structure: u['speaker'] usually exists for diarization?
+                // If not, we iterate.
+                
+                // Assume alternating logic if no speaker label, or check u.speaker
+                const speaker = u.speaker || (index % 2 === 0 ? "A" : "B");
+                
+                bubble.className = `chat-bubble speaker-${speaker}`;
+                
+                bubble.innerHTML = `
+                    <div class="speaker-label">Speaker ${speaker}</div>
+                    <div class="bubble-content">${u.text}</div>
+                `;
+                container.appendChild(bubble);
+            });
+        } else if (fullText) {
+            // Fallback to plain text if no utterances
+             container.innerHTML += `<div class="bubble-content" style="width:100%">${fullText}</div>`;
+        } else {
+            container.innerText = "No transcript available.";
+        }
+    }
+</script>
+{% endblock %}

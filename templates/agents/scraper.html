@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}x402 Scraper{% endblock %}
+{% block nav_scraper %}active{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 800px; margin: 0 auto;">
+    
+    <!-- Header -->
+    <div style="margin-bottom: 32px; border-bottom: 1px solid var(--border-light); padding-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+            <div style="width: 48px; height: 48px; background: var(--bg-card); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text-main);">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            </div>
+            <div>
+                <h1 class="font-bold text-xl">x402 Web Scraper</h1>
+                <p class="text-muted text-sm">Extract raw text & data from any public URL</p>
+            </div>
+        </div>
+        <div class="font-mono text-xs text-dim">Using x402 Protocol • 0.0001 MON per request</div>
+    </div>
+
+    <!-- Input Form -->
+    <form id="scraperForm">
+        <div class="input-group">
+            <label class="input-label">Target URL</label>
+            <input type="url" id="targetUrl" class="input-field" placeholder="https://example.com" required>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%;">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            Extract Data
+        </button>
+    </form>
+    
+    <!-- Results Area -->
+    <div id="resultArea" style="display: none; margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border-light);">
+        
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-lg">Extraction Result</h3>
+            <span id="contentMeta" class="text-xs font-mono text-dim"></span>
+        </div>
+
+        <div class="p-4 bg-body rounded border border-light relative group" style="max-height: 500px; overflow-y: auto;">
+            <div id="scrapedContent" class="text-sm text-muted" style="line-height: 1.6;"></div>
+            <button onclick="copyContent()" class="absolute top-2 right-2 bg-card border border-light p-2 rounded opacity-0 group-hover:opacity-100 transition text-xs">Copy</button>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('scraperForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const url = document.getElementById('targetUrl').value;
+        const resultArea = document.getElementById('resultArea');
+        resultArea.style.display = 'none';
+
+        try {
+            const response = await window.x402Fetch('/api/x402/scraper/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                resultArea.style.display = 'block';
+                
+                const content = result.data?.markdown || result.data?.content || "No content.";
+                const len = result.data?.content_length || content.length;
+                
+                document.getElementById('scrapedContent').innerHTML = marked.parse(content);
+                document.getElementById('contentMeta').innerText = `${len} bytes extracted`;
+            } else {
+                alert("Scraping failed: " + response.statusText);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("An error occurred during scraping.");
+        }
+    });
+
+    function copyContent() {
+        const text = document.getElementById('scrapedContent').innerText;
+        navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
+    }
+</script>
+{% endblock %}

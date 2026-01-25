@@ -1,0 +1,814 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Model Intelligence Lab{% endblock %}
+{% block nav_modellab %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .model-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 20px;
+        font-size: 12px;
+        color: var(--text-muted);
+        transition: 0.2s;
+    }
+    .model-chip:hover {
+        border-color: var(--text-main);
+        color: var(--text-main);
+    }
+    .model-chip .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #10b981;
+    }
+    
+    .response-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        transition: 0.3s;
+        min-height: 500px;
+    }
+    .response-card:hover {
+        border-color: var(--border-hover);
+    }
+    .response-card.selected {
+        border-color: #10b981;
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+    }
+    .response-card.winner {
+        border-color: #f59e0b;
+    }
+    
+    .response-header {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .response-header .badge {
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+    }
+    .badge-a { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+    .badge-b { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+    
+    .response-content {
+        flex: 1;
+        overflow-y: auto;
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--text-muted);
+        padding-right: 8px;
+    }
+    .response-content pre {
+        background: var(--bg-body);
+        padding: 12px;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-size: 12px;
+    }
+    .response-content code {
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .select-btn {
+        margin-top: 16px;
+        width: 100%;
+        padding: 12px;
+        background: transparent;
+        border: 1px solid var(--border-light);
+        color: var(--text-main);
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .select-btn:hover {
+        background: var(--text-main);
+        color: var(--bg-body);
+    }
+    .select-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .winner-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .reveal-model {
+        margin-top: 16px;
+        padding: 12px;
+        background: var(--bg-body);
+        border-radius: 8px;
+        text-align: center;
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+    .reveal-model strong {
+        color: var(--text-main);
+    }
+    
+    .skeleton {
+        background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s infinite;
+        border-radius: 4px;
+        height: 16px;
+        margin-bottom: 8px;
+    }
+    @keyframes skeleton-loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+    
+    .history-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .history-item:hover {
+        border-color: var(--border-hover);
+        background: var(--bg-hover);
+    }
+    .history-item .prompt-preview {
+        color: var(--text-main);
+        font-weight: 500;
+        margin-bottom: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .history-item .meta {
+        display: flex;
+        gap: 16px;
+        font-size: 11px;
+        color: var(--text-dim);
+        align-items: center;
+    }
+    .history-item .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    /* 50-50 Equal Width Layout */
+    .compare-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-top: 32px;
+    }
+    @media (max-width: 900px) {
+        .compare-grid { grid-template-columns: 1fr; }
+    }
+    
+    .future-note {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        border-radius: 8px;
+        font-size: 13px;
+        color: #10b981;
+        margin-top: 16px;
+    }
+
+    /* History Modal */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+    }
+    .modal-overlay.active {
+        display: flex;
+    }
+    .modal-content {
+        background: var(--bg-panel);
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        width: 100%;
+        max-width: 1200px;
+        max-height: 90vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .modal-header h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+    .modal-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid var(--border-light);
+        background: transparent;
+        color: var(--text-muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.2s;
+    }
+    .modal-close:hover {
+        background: var(--text-main);
+        color: var(--bg-body);
+    }
+    .modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+    }
+    .modal-responses {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+    @media (max-width: 900px) {
+        .modal-responses { grid-template-columns: 1fr; }
+    }
+    .modal-response-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        padding: 20px;
+    }
+
+    /* Enterprise UI Styles */
+    .model-card-pro {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border-light);
+        border-radius: 10px;
+        padding: 16px;
+        position: relative;
+        transition: all 0.2s ease;
+    }
+    .model-card-pro:hover {
+        background: rgba(255,255,255,0.08);
+        border-color: var(--text-muted);
+        transform: translateY(-2px);
+    }
+    .model-card-pro.active {
+        border-left: 3px solid #10b981;
+    }
+    .dot-pulse {
+        width: 6px;
+        height: 6px;
+        background: #10b981;
+        border-radius: 50%;
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        animation: pulse-green 2s infinite;
+    }
+    @keyframes pulse-green {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    .model-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 4px;
+    }
+    .model-meta {
+        font-size: 11px;
+        color: var(--text-dim);
+    }
+    .powered-by-groq {
+        display: flex;
+        align-items: center;
+        background: #000;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #333;
+    }
+    .groq-logo {
+        font-weight: 800;
+        letter-spacing: 1px;
+        font-size: 14px;
+        color: #fff;
+    }
+    .roadmap-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 4px;
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+    .modal-response-card.winner-card {
+        border-color: #10b981;
+    }
+    .modal-response-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border-light);
+    }
+    .modal-response-content {
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--text-muted);
+        max-height: 400px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 100%;">
+    
+    <!-- Header -->
+    <div style="margin-bottom: 32px; border-bottom: 1px solid var(--border-light); padding-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #4f46e5, #7c3aed); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white;">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+            </div>
+            <div>
+                <h1 class="font-bold text-xl">Model Intelligence Lab</h1>
+                <p class="text-muted text-sm">Blind evaluation to select the best LLM output for production workflows</p>
+            </div>
+        </div>
+        <div class="font-mono text-xs text-dim">Using x402 Protocol • 0.0002 MON per evaluation</div>
+    </div>
+
+    <!-- Available Models -->
+    <!-- Model Integrity Hub -->
+    <div class="panel" style="margin-bottom: 24px; padding: 0; overflow: hidden; position: relative;">
+        <!-- Header Strip -->
+        <div style="padding: 16px 20px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" fill="var(--color-primary)" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z"/></svg>
+                <h3 class="text-sm font-bold" style="color: var(--text-main);">Active Neural Network</h3>
+            </div>
+            <span class="text-xs text-dim bg-dark-hover px-2 py-1 rounded-full">v2.4.0-stable</span>
+        </div>
+
+        <div style="padding: 24px;">
+            <!-- Active Models Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px;">
+                <div class="model-card-pro active">
+                    <div class="dot-pulse"></div>
+                    <div class="model-name">Llama 3.3 70B</div>
+                    <div class="model-meta">Meta AI</div>
+                </div>
+                <div class="model-card-pro active">
+                    <div class="dot-pulse"></div>
+                    <div class="model-name">Llama 4 Scout</div>
+                    <div class="model-meta">Experimental</div>
+                </div>
+                <div class="model-card-pro active">
+                    <div class="dot-pulse"></div>
+                    <div class="model-name">Kimi K2</div>
+                    <div class="model-meta">Moonshot</div>
+                </div>
+                <div class="model-card-pro active">
+                    <div class="dot-pulse"></div>
+                    <div class="model-name">GPT OSS 120B</div>
+                    <div class="model-meta">Open Source</div>
+                </div>
+            </div>
+
+            <!-- Provider Badge & Future Roadmap -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+                <!-- Future Roadmap -->
+                <div style="flex: 1;">
+                    <div class="text-xs text-dim uppercase tracking-wider mb-2">Integrating Soon</div>
+                    <div style="display: flex; gap: 8px; opacity: 0.5;">
+                        <span class="roadmap-badge"><span class="i-openai"></span> GPT-5</span>
+                        <span class="roadmap-badge"><span class="i-claude"></span> Claude 3.7</span>
+                        <span class="roadmap-badge"><span class="i-gemini"></span> Gemini Ultra</span>
+                    </div>
+                </div>
+
+                <!-- Powered By -->
+                <div class="powered-by-groq">
+                    <span class="text-xs text-dim mr-2">High-Velocity Inference by</span>
+                    <span class="groq-logo">GROQ</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input Panel -->
+    <div class="panel" style="margin-bottom: 24px;">
+        <form id="evalForm">
+            <div class="input-group">
+                <label class="input-label">Enter Request</label>
+                <textarea id="promptInput" class="input-field" rows="4" placeholder="Enter your prompt for the models to respond to..." required></textarea>
+            </div>
+
+
+
+            <button type="submit" class="btn-primary" style="width: 100%;" id="runBtn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                Run Blind Evaluation (2 Random Models)
+            </button>
+        </form>
+    </div>
+
+    <!-- Results Area (Hidden Initially) -->
+    <div id="resultsArea" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div>
+                <h2 class="font-bold text-lg" style="color: var(--text-main);">Blind Comparison</h2>
+                <p class="text-sm text-muted">Select the response you find better. Model names will be revealed after selection.</p>
+            </div>
+        </div>
+        
+        <!-- 50-50 Equal Width Grid -->
+        <div class="compare-grid">
+            <!-- Response A -->
+            <div class="response-card" id="cardA">
+                <div class="response-header">
+                    <span class="badge badge-a">A</span>
+                    Response A
+                </div>
+                <div class="response-content" id="responseA">
+                    <div class="skeleton" style="width: 100%;"></div>
+                    <div class="skeleton" style="width: 80%;"></div>
+                    <div class="skeleton" style="width: 90%;"></div>
+                </div>
+                <button class="select-btn" onclick="selectWinner('A')" id="selectBtnA">
+                    Select Response A
+                </button>
+                <div class="reveal-model" id="revealA" style="display: none;"></div>
+            </div>
+
+            <!-- Response B -->
+            <div class="response-card" id="cardB">
+                <div class="response-header">
+                    <span class="badge badge-b">B</span>
+                    Response B
+                </div>
+                <div class="response-content" id="responseB">
+                    <div class="skeleton" style="width: 100%;"></div>
+                    <div class="skeleton" style="width: 85%;"></div>
+                    <div class="skeleton" style="width: 75%;"></div>
+                </div>
+                <button class="select-btn" onclick="selectWinner('B')" id="selectBtnB">
+                    Select Response B
+                </button>
+                <div class="reveal-model" id="revealB" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Selection Result -->
+        <div id="selectionResult" style="display: none; margin-top: 24px; padding: 16px; background: var(--bg-card); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; text-align: center;">
+            <span class="winner-badge" id="winnerBadge">
+                <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                Winner Selected
+            </span>
+            <p class="text-sm text-muted mt-2">Selection recorded for analytics.</p>
+        </div>
+    </div>
+
+    <!-- Battle History -->
+    <div class="panel" style="margin-top: 40px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <h3 class="text-sm font-bold" style="color: var(--text-muted);">Recent Evaluations</h3>
+        </div>
+        
+        <div id="historyList">
+            {% if recent_evaluations %}
+                {% for eval in recent_evaluations %}
+                <div class="history-item" data-prompt="{{ eval.prompt }}" data-model-a="{{ eval.model_a }}" data-model-b="{{ eval.model_b }}" data-response-a="{{ eval.response_a }}" data-response-b="{{ eval.response_b }}" data-winner="{{ eval.winner }}" onclick="showHistoryModal(this)">
+                    <div class="prompt-preview">{{ eval.prompt|truncatechars:80 }}</div>
+                    <div class="meta">
+                        <div class="meta-item">
+                            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Winner: <strong style="color: var(--text-main); margin-left: 4px;">{{ eval.winner }}</strong>
+                        </div>
+                        <div class="meta-item">
+                            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            {{ eval.model_a }} vs {{ eval.model_b }}
+                        </div>
+                        <div class="meta-item">
+                            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            {{ eval.created_at|date:"M d, H:i" }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-sm text-dim">No evaluations yet. Run your first blind test above!</p>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<!-- History Modal -->
+<div class="modal-overlay" id="historyModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Evaluation Details</h3>
+            <button class="modal-close" onclick="closeHistoryModal()">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div style="margin-bottom: 20px; padding: 16px; background: var(--bg-body); border-radius: 8px;">
+                <div class="text-xs text-dim uppercase mb-2">Prompt</div>
+                <div id="modalPrompt" class="text-sm" style="color: var(--text-main);"></div>
+            </div>
+            <div class="modal-responses">
+                <div class="modal-response-card" id="modalCardA">
+                    <div class="modal-response-header">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="badge badge-a">A</span>
+                            <span id="modalModelA" class="font-mono text-sm"></span>
+                        </div>
+                        <span id="modalWinnerA"></span>
+                    </div>
+                    <div class="modal-response-content" id="modalResponseA"></div>
+                </div>
+                <div class="modal-response-card" id="modalCardB">
+                    <div class="modal-response-header">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="badge badge-b">B</span>
+                            <span id="modalModelB" class="font-mono text-sm"></span>
+                        </div>
+                        <span id="modalWinnerB"></span>
+                    </div>
+                    <div class="modal-response-content" id="modalResponseB"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Store evaluation data globally
+    let currentEval = {
+        prompt: '',
+        model_a: '',
+        model_b: '',
+        response_a: '',
+        response_b: ''
+    };
+
+    // Form Submission
+    document.getElementById('evalForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const runBtn = document.getElementById('runBtn');
+        const promptInput = document.getElementById('promptInput');
+        const prompt = promptInput.value.trim();
+        
+        if (!prompt) {
+            alert('Please enter a prompt');
+            return;
+        }
+
+        // Prevent double submission
+        if (runBtn.disabled) return;
+        runBtn.disabled = true;
+        promptInput.disabled = true;
+        const originalBtnText = runBtn.innerHTML;
+        runBtn.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Processing Payment & Models...
+        `;
+        
+        // Reset UI
+        document.getElementById('resultsArea').style.display = 'block';
+        document.getElementById('selectionResult').style.display = 'none';
+        document.getElementById('revealA').style.display = 'none';
+        document.getElementById('revealB').style.display = 'none';
+        document.getElementById('cardA').classList.remove('selected', 'winner');
+        document.getElementById('cardB').classList.remove('selected', 'winner');
+        document.getElementById('selectBtnA').disabled = false;
+        document.getElementById('selectBtnB').disabled = false;
+        
+        // Show skeletons
+        document.getElementById('responseA').innerHTML = `
+            <div class="skeleton" style="width: 100%;"></div>
+            <div class="skeleton" style="width: 80%;"></div>
+            <div class="skeleton" style="width: 90%;"></div>
+            <div class="skeleton" style="width: 70%;"></div>
+            <div class="skeleton" style="width: 85%;"></div>
+        `;
+        document.getElementById('responseB').innerHTML = `
+            <div class="skeleton" style="width: 100%;"></div>
+            <div class="skeleton" style="width: 85%;"></div>
+            <div class="skeleton" style="width: 75%;"></div>
+            <div class="skeleton" style="width: 95%;"></div>
+            <div class="skeleton" style="width: 60%;"></div>
+        `;
+        
+        // Scroll to results
+        document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth' });
+        
+        try {
+            const response = await window.x402Fetch('/api/x402/lab/evaluate/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                // Store data globally
+                currentEval = {
+                    prompt: data.prompt,
+                    model_a: data.model_a,
+                    model_b: data.model_b,
+                    response_a: data.response_a,
+                    response_b: data.response_b
+                };
+                
+                // Render responses (hide model names!)
+                document.getElementById('responseA').innerHTML = marked.parse(data.response_a);
+                document.getElementById('responseB').innerHTML = marked.parse(data.response_b);
+                
+            } else {
+                const err = await response.json();
+                alert('Evaluation failed: ' + (err.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error(error);
+            alert('An error occurred during evaluation.');
+        } finally {
+            // Re-enable button
+            runBtn.disabled = false;
+            promptInput.disabled = false;
+            runBtn.innerHTML = originalBtnText;
+        }
+    });
+
+    // Select Winner Function
+    async function selectWinner(winner) {
+        if (!currentEval.model_a || !currentEval.model_b) {
+            alert('No evaluation data available');
+            return;
+        }
+        
+        // Disable buttons
+        document.getElementById('selectBtnA').disabled = true;
+        document.getElementById('selectBtnB').disabled = true;
+        
+        // Highlight selected card
+        if (winner === 'A') {
+            document.getElementById('cardA').classList.add('selected');
+        } else {
+            document.getElementById('cardB').classList.add('selected');
+        }
+        
+        try {
+            const response = await fetch('/api/lab/selection/', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': window.x402.getCSRFToken()
+                },
+                body: JSON.stringify({
+                    ...currentEval,
+                    winner: winner
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                // Reveal model names
+                document.getElementById('revealA').style.display = 'block';
+                document.getElementById('revealA').innerHTML = `
+                    Generated by: <strong>${currentEval.model_a}</strong>
+                    ${winner === 'A' ? '<span class="winner-badge" style="margin-left: 8px;">Winner ✓</span>' : ''}
+                `;
+                
+                document.getElementById('revealB').style.display = 'block';
+                document.getElementById('revealB').innerHTML = `
+                    Generated by: <strong>${currentEval.model_b}</strong>
+                    ${winner === 'B' ? '<span class="winner-badge" style="margin-left: 8px;">Winner ✓</span>' : ''}
+                `;
+                
+                // Show selection result
+                document.getElementById('selectionResult').style.display = 'block';
+                
+                // Add winner styling
+                if (winner === 'A') {
+                    document.getElementById('cardA').classList.add('winner');
+                } else {
+                    document.getElementById('cardB').classList.add('winner');
+                }
+                
+            } else {
+                const err = await response.json();
+                alert('Failed to record selection: ' + (err.error || 'Unknown error'));
+                document.getElementById('selectBtnA').disabled = false;
+                document.getElementById('selectBtnB').disabled = false;
+            }
+        } catch (error) {
+            console.error(error);
+            alert('An error occurred while recording selection.');
+            document.getElementById('selectBtnA').disabled = false;
+            document.getElementById('selectBtnB').disabled = false;
+        }
+    }
+
+    // History Modal Functions
+    function showHistoryModal(element) {
+        const prompt = element.dataset.prompt;
+        const modelA = element.dataset.modelA;
+        const modelB = element.dataset.modelB;
+        const responseA = element.dataset.responseA;
+        const responseB = element.dataset.responseB;
+        const winner = element.dataset.winner;
+        
+        document.getElementById('modalPrompt').innerText = prompt;
+        document.getElementById('modalModelA').innerText = modelA;
+        document.getElementById('modalModelB').innerText = modelB;
+        document.getElementById('modalResponseA').innerHTML = marked.parse(responseA);
+        document.getElementById('modalResponseB').innerHTML = marked.parse(responseB);
+        
+        // Show winner badge
+        document.getElementById('modalWinnerA').innerHTML = winner === 'A' ? '<span class="winner-badge">Winner ✓</span>' : '';
+        document.getElementById('modalWinnerB').innerHTML = winner === 'B' ? '<span class="winner-badge">Winner ✓</span>' : '';
+        
+        // Highlight winner card
+        document.getElementById('modalCardA').classList.toggle('winner-card', winner === 'A');
+        document.getElementById('modalCardB').classList.toggle('winner-card', winner === 'B');
+        
+        document.getElementById('historyModal').classList.add('active');
+    }
+
+    function closeHistoryModal() {
+        document.getElementById('historyModal').classList.remove('active');
+    }
+
+    // Close modal on overlay click
+    document.getElementById('historyModal').addEventListener('click', (e) => {
+        if (e.target.id === 'historyModal') {
+            closeHistoryModal();
+        }
+    });
+
+    // Close modal on ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeHistoryModal();
+        }
+    });
+</script>
+{% endblock %}

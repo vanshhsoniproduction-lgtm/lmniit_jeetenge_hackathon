@@ -1,103 +1,78 @@
-{% extends 'payment/base.html' %}
+{% extends 'base.html' %}
+{% load static %}
 
-{% block title %}My Profile | PayLink{% endblock %}
+{% block title %}PayLink Profile{% endblock %}
+{% block nav_paylink %}active{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto pt-6 animate-fade-in">
-    
-    <!-- Profile Header -->
-    <div class="glass-panel border border-white/10 rounded-2xl p-8 mb-8 relative overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-r from-indigo-900/20 to-purple-900/20 pointer-events-none"></div>
-        <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -z-10"></div>
+<div style="max-w-600px; margin: 0 auto; padding-top: 60px;">
 
-        <div class="flex flex-col md:flex-row items-center gap-8 relative z-10">
-            <div class="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                <span class="text-3xl font-bold text-white">U</span>
-            </div>
-            
-            <div class="text-center md:text-left flex-1">
-                <h1 class="text-3xl font-bold text-white mb-2">My PayLink Profile</h1>
-                <div class="flex flex-col md:flex-row items-center gap-3 text-sm">
-                    <span class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-slate-300 font-mono flex items-center gap-2">
-                        <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                        {{ user.wallet_address }}
-                        <button onclick="navigator.clipboard.writeText('{{ user.wallet_address }}')" class="hover:text-white ml-2 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 01-2-2V5a2 2 0 012-2h4"></path></svg>
-                        </button>
-                    </span>
-                    <span class="text-slate-500">Monad Testnet</span>
-                </div>
-            </div>
+    <!-- Minimal Profile Card -->
+    <div class="panel" style="text-align: center; padding: 40px 30px;">
+        
+        <!-- Avatar Circle - Centered -->
+        <div style="width: 80px; height: 80px; margin: 0 auto 20px; border-radius: 50%; background: linear-gradient(135deg, #333333, #000000); border: 2px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);">
+            <svg width="40" height="40" fill="currentColor" style="color: white;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+        </div>
 
-            <div class="flex gap-4">
-                 <a href="/logout/" class="px-6 py-2 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 transition font-medium">
-                    Logout
-                </a>
+        <!-- Connected via MetaMask -->
+        <div style="font-size: 14px; color: #888; margin-bottom: 20px;">Connected via MetaMask</div>
+        
+        <!-- Wallet Address with Small Copy Icon -->
+        <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 16px; margin-bottom: 30px;">
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; animation: pulse 2s infinite;"></div>
+            <code style="font-family: monospace; font-size: 13px; color: #e2e8f0; word-break: break-all;">{{ user.wallet_address }}</code>
+            <button onclick="copyAddress()" style="background: none; border: none; cursor: pointer; padding: 4px; color: #888; transition: color 0.3s;" title="Copy Address" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+            </button>
+        </div>
+
+        <!-- Status & Network Grid -->
+        <div style="display: flex; justify-content: center; gap: 60px; padding-top: 25px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <!-- Status -->
+            <div style="text-align: center;">
+                <div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Status</div>
+                <div style="font-size: 16px; font-weight: bold; color: #10b981;">Active</div>
+            </div>
+            <!-- Network -->
+            <div style="text-align: center;">
+                <div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Network</div>
+                <div style="font-size: 16px; font-weight: bold; color: #fff;">Monad Testnet</div>
             </div>
         </div>
+        
     </div>
 
-    <div class="grid md:grid-cols-2 gap-8">
+    <!-- Under Construction Section - Professional -->
+    <div style="margin-top: 32px; padding: 40px 30px; text-align: center; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;">
         
-        <!-- Quick Static QR -->
-        <div class="glass-panel border border-white/10 rounded-2xl p-6 hover:border-indigo-500/30 transition duration-300 group">
-            <div class="flex justify-between items-start mb-6">
-                <div>
-                    <h2 class="text-xl font-bold text-white mb-1">Your Static QR</h2>
-                    <p class="text-slate-400 text-sm">Receive Any Amount (MON)</p>
-                </div>
-                <div class="p-2 bg-indigo-500/10 rounded-lg text-indigo-400 group-hover:text-indigo-300 transition">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v1m6 11h2m-6 0h-2v4h-4v-2h4v-4h6v4zM5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L14 10"></path></svg>
-                </div>
-            </div>
-            
-            <div class="bg-white p-2 rounded-lg w-max mx-auto mb-6 group-hover:scale-105 transition duration-300">
-                <div id="static-qr-small"></div>
-            </div>
-
-            <a href="{% url 'static_qr' %}" class="block w-full text-center py-3 bg-white/5 hover:bg-white/10 rounded-xl text-slate-300 font-medium transition border border-white/5">
-                View Full Page
-            </a>
+        <!-- Hourglass Icon in Circle - Centered -->
+        <div style="width: 70px; height: 70px; margin: 0 auto 24px; border-radius: 50%; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255,255,255,0.05);">
+            <!-- Hourglass / Sand Clock Icon -->
+            <svg width="32" height="32" fill="none" stroke="#888" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         </div>
 
-        <!-- Create Dynamic -->
-        <div class="glass-panel border border-white/10 rounded-2xl p-6 hover:border-purple-500/30 transition duration-300 group flex flex-col justify-between">
-            <div>
-                 <div class="flex justify-between items-start mb-6">
-                    <div>
-                        <h2 class="text-xl font-bold text-white mb-1">Create PayLink</h2>
-                        <p class="text-slate-400 text-sm">Generate QR for custom amount</p>
-                    </div>
-                    <div class="p-2 bg-purple-500/10 rounded-lg text-purple-400 group-hover:text-purple-300 transition">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    </div>
-                </div>
-                
-                <p class="text-slate-500 text-sm mb-6 leading-relaxed">
-                    Create a unique, sharable payment request link for a specific amount. Example: <span class="text-slate-400 italic">"Client Project A - 5.0 MON"</span>.
-                </p>
-            </div>
-
-            <a href="{% url 'create_dynamic_qr' %}" class="block w-full text-center py-3 btn-primary rounded-xl text-white font-bold transition shadow-lg">
-                Create New Link
-            </a>
-        </div>
-
+        <!-- Title -->
+        <h3 style="font-size: 18px; font-weight: 600; color: #e5e5e5; margin-bottom: 12px;">QR System In Development</h3>
+        
+        <!-- Description -->
+        <p style="font-size: 14px; color: #666; max-width: 320px; margin: 0 auto; line-height: 1.6;">
+            We are currently building a decentralized QR payment infrastructure. Please copy your wallet address manually for now.
+        </p>
+        
     </div>
 
 </div>
 {% endblock %}
 
-{% block extra_scripts %}
+{% block extra_js %}
 <script>
-    // Generate Small Static QR
-    new QRCode(document.getElementById("static-qr-small"), {
-        text: window.location.origin + "{% url 'pay_static' %}",
-        width: 140,
-        height: 140,
-        colorDark : "#000000",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.M
-    });
+    function copyAddress() {
+        const addr = "{{ user.wallet_address }}";
+        navigator.clipboard.writeText(addr).then(() => {
+            // Toast or Alert
+            alert("Address copied to clipboard!");
+        });
+    }
 </script>
 {% endblock %}
