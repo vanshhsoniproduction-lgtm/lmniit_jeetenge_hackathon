@@ -124,6 +124,23 @@
     .tab-btn:hover { color: var(--text-main); }
     .hidden { display: none; }
     .block { display: block; }
+
+    /* Markdown Styling Correction (Missing Tailwind fix) */
+    .prose { color: var(--text-muted); }
+    .prose h1 { font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 1rem; margin-top: 2rem; border-bottom: 1px solid var(--border-light); padding-bottom: 0.5rem; }
+    .prose h2 { font-size: 1.25rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.75rem; margin-top: 1.5rem; }
+    .prose h3 { font-size: 1.1rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem; margin-top: 1.25rem; }
+    .prose p { margin-bottom: 1rem; line-height: 1.6; }
+    .prose ul, .prose ol { margin-bottom: 1rem; padding-left: 1.5rem; }
+    .prose ul { list-style-type: disc; }
+    .prose ol { list-style-type: decimal; }
+    .prose li { margin-bottom: 0.4rem; pl: 0.5rem; }
+    .prose strong { font-weight: 700; color: var(--text-main); }
+    .prose code { background: var(--bg-panel); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; border: 1px solid var(--border-light); color: var(--text-main); }
+    .prose pre { background: var(--bg-panel); padding: 1rem; border-radius: 8px; overflow-x: auto; margin-bottom: 1.5rem; border: 1px solid var(--border-light); }
+    .prose pre code { background: none; padding: 0; border: none; color: inherit; }
+    .prose blockquote { border-left: 3px solid var(--border-hover); padding-left: 1rem; color: var(--text-dim); font-style: italic; margin-bottom: 1rem; }
+    .prose a { color: #3b82f6; text-decoration: underline; }
 </style>
 {% endblock %}
 

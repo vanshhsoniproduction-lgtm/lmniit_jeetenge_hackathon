@@ -147,6 +147,15 @@ urlpatterns = [
     # └──────────────────────────────────────────────────────────────────────┘
     path('x402/ytdocs/', views.run_ytdocs_x402, name='run_ytdocs_x402'),
     
+    # ┌──────────────────────────────────────────────────────────────────────┐
+    # │ 📈 SMART PORTFOLIO AGENT (x402) - NEW!                               │
+    # │ Price: 0.0015 MON                                                    │
+    # │ Method: POST                                                         │
+    # │ Body: { user_input, mode, risk_appetite }                            │
+    # │ Returns: { risk_score, advice, allocations, etc }                    │
+    # └──────────────────────────────────────────────────────────────────────┘
+    path('x402/finance/', views.run_finance_x402, name='run_finance_x402'),
+    
     # YT Docs Page (UI)
     path('ytdocs/', views.ytdocs_view, name='ytdocs_view'),
 
@@ -157,6 +166,7 @@ urlpatterns = [
     path('view/audio/', views.agent_audio_view, name='agent_audio'),
     path('view/competescan/', views.agent_competescan_view, name='agent_competescan'),
     path('view/scraper/', views.agent_scraper_view, name='agent_scraper'),
+    path('view/finance/', views.agent_finance_view, name='agent_finance'),
     path('history/', views.history_view, name='history_view'),
     
     # ┌──────────────────────────────────────────────────────────────────────┐

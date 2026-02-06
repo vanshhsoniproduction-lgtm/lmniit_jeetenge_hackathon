@@ -1,6 +1,6 @@
 # 📋 Product Requirements Document (PRD): Web3 AI Agent Platform
 
-**Project Name:** LNMIIT Jeetenge Hackathon - Web3.AI  
+**Project Name:** Web3.AI - Autonomous Agent Platform  
 **Version:** 2.0 (x402 Protocol Update)  
 **Status:** ✅ Complete  
 **Last Updated:** January 24, 2026
@@ -24,7 +24,7 @@
 
 ## 1. Executive Summary
 
-This project is a **Web3-native AI Agent Platform** built for the **LNMIIT Jeetenge Hackathon**. It bridges decentralized finance (DeFi) and artificial intelligence by offering **pay-per-use AI services** via the **Monad Testnet**.
+This project is a **Web3-native AI Agent Platform**. It bridges decentralized finance (DeFi) and artificial intelligence by offering **pay-per-use AI services** via the **Monad Testnet**.
 
 ### 🎯 Key Features
 
@@ -33,7 +33,7 @@ This project is a **Web3-native AI Agent Platform** built for the **LNMIIT Jeete
 | **Web3 Auth** | Login via MetaMask wallet (no email/password) |
 | **Pay-Per-Use** | Micro-payments instead of subscriptions |
 | **x402 Protocol** | HTTP 402 Payment Required standard |
-| **4 AI Agents** | GitHub, Voice, CompeteScan, Scraper |
+| **5 AI Agents** | GitHub, Voice, CompeteScan, Scraper, Portfolio |
 | **Monad Blockchain** | Fast & cheap transactions |
 
 ---
@@ -141,6 +141,7 @@ When payment is required, the server returns:
 | web3.py | Blockchain interaction |
 | Google Gemini 2.5 | AI analysis |
 | ElevenLabs API | Speech-to-text |
+| CoinGecko API | Real-time Market Data |
 
 ### Frontend
 
@@ -198,6 +199,7 @@ web3_ai/
 | x402 GitHub Endpoint | `agents/views.py` | Lines 785-850 |
 | x402 CompeteScan Endpoint | `agents/views.py` | Lines 860-930 |
 | x402 Audio Endpoint | `agents/views.py` | Lines 940-1005 |
+| x402 Portfolio Endpoint | `agents/views.py` | Lines 1000+ |
 | x402Fetch (Frontend) | `templates/dashboard.html` | Lines 1193-1280 |
 | x402FetchFormData | `templates/dashboard.html` | Lines 1290-1360 |
 | x402 URL Routes | `agents/urls.py` | Lines 98-135 |
@@ -253,6 +255,7 @@ web3_ai/
 | **GitHub Architect** | `/api/x402/github/` | 0.0005 MON | Repository analysis |
 | **CompeteScan AI** | `/api/x402/competescan/` | 0.0010 MON | Competitor analysis |
 | **Voice Intelligence** | `/api/x402/audio/` | 0.0011 MON | Audio transcription |
+| **Smart Portfolio Architect** | `/api/x402/finance/` | 0.0015 MON | AI Crypto Investment Advisor |
 
 ### Agent Details
 
@@ -276,6 +279,11 @@ web3_ai/
 - **Input:** Audio file (MP3/WAV)
 - **Output:** Transcript, minutes, todos, deadlines
 - **File:** `agents/views.py` → `run_audio_x402()`
+
+#### 5. Smart Portfolio Architect (x402)
+- **Input:** User portfolio / Investment goals
+- **Output:** Risk analysis, rebalancing advice, market sentiment
+- **File:** `agents/views.py` → `run_finance_x402()`
 
 ---
 
@@ -421,4 +429,4 @@ const res = await window.x402Fetch('/api/x402/my-agent/', {
 
 **🎉 Project Complete!**
 
-*Built with ❤️ for LNMIIT Jeetenge Hackathon*
+*Built with ❤️ by Web3.AI Team*

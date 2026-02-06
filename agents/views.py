@@ -47,6 +47,7 @@ from web3 import Web3  # Blockchain interaction (Monad Testnet)
 from .models import AnalysisTransaction  # Database model for storing results
 from .scraper import scrape_competitor  # Website scraping utility
 from functools import wraps  # Decorator helper function
+from .finance_helper import extract_holdings, get_market_context_for_gemini # Finance helper
 
 
 # ============================================================================
@@ -1187,6 +1188,11 @@ def agent_scraper_view(request):
     """Render Web Scraper Agent Interface"""
     return render(request, 'agents/scraper.html')
 
+@login_required
+def agent_finance_view(request):
+    """Render Finance Agent Interface"""
+    return render(request, 'agents/finance.html')
+
 @csrf_exempt
 @login_required
 @require_POST
@@ -1429,6 +1435,103 @@ def run_ytdocs_x402(request):
         
     except Exception as e:
         log_error(f"YT-DOCS Exception: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+@x402_payment_required(required_amount=0.0015, asset="MON", description="Smart Portfolio Architect")
+def run_finance_x402(request):
+    """
+    x402-enabled Finance Agent.
+    Analyzes crypto portfolios using live CoinGecko data + Gemini AI.
+    """
+    log_agent("FINANCE", f"User: {request.user.wallet_address}")
+    log_success("x402 Payment Verified - Starting Portfolio Analysis...")
+    
+    try:
+        data = json.loads(request.body)
+        user_input = data.get('user_input', '')
+        mode = data.get('mode', 'portfolio')
+        risk_appetite = data.get('risk_appetite', 'balanced')
+        
+        if not user_input or len(user_input) < 3:
+            return JsonResponse({'error': 'Input too short'}, status=400)
+            
+        # 1. Parse Holdings & Get Context
+        log_info("Parsing holdings & fetching live prices...")
+        holdings = extract_holdings(user_input)
+        context, total_value = get_market_context_for_gemini(holdings)
+        
+        # 2. Gemini Analysis
+        log_info("Sending context to Gemini...")
+        prompt = f"""
+        You are an expert Crypto Financial Advisor (Web3 Specialist).
+        
+        USER PROFILE:
+        - Goal: {mode.title()}
+        - Risk Appetite: {risk_appetite.title()}
+        - Current Portfolio/Investment:
+        {context}
+        
+        YOUR TASK:
+        Analyze the portfolio/investment plan based on the user's risk appetite and current market conditions.
+        
+        RETURN JSON ONLY (No Markdown):
+        {{
+            "risk_score": (Integer 0-100, where 100 is extremely risky/degen),
+            "total_value_usd": "Str formatted value (e.g. $1,250.00)",
+            "market_sentiment": "Bullish/Bearish/Neutral",
+            "summary": "2-3 sentences executive summary of the portfolio health.",
+            "allocations": [
+                {{"asset": "BTC", "percentage": 40}},
+                {{"asset": "ETH", "percentage": 30}},
+                ... (Suggested ideal allocation)
+            ],
+            "action_plan": "Markdown string. Specific, actionable advice. Use bullet points.",
+            "assets_analysis": [
+                {{
+                    "symbol": "ETH",
+                    "price": 2500,
+                    "change_24h": -1.2,
+                    "recommendation": "Hold/Buy/Sell"
+                }}
+                ... (One for each asset in input)
+            ]
+        }}
+        """
+        
+        socket.getaddrinfo = new_getaddrinfo
+        try:
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
+            resp = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
+        finally:
+            socket.getaddrinfo = original_getaddrinfo
+            
+        # 3. Parse and Save
+        try:
+            clean = resp.text.replace("```json", "").replace("```", "").strip()
+            final_data = json.loads(clean)
+        except:
+            final_data = {"error": "AI Parse Error", "raw": resp.text}
+            
+        # Save to DB
+        payment_header = request.headers.get('x-payment', 'x402-payment')
+        AnalysisTransaction.objects.create(
+            user=request.user,
+            category='FINANCE',
+            agent_type='portfolio_architect',
+            input_text=user_input[:200],
+            title="Portfolio Analysis",
+            output_data=json.dumps(final_data),
+            tx_hash=payment_header[:66] if len(payment_header) > 66 else payment_header,
+            cost=0.0015
+        )
+        
+        return JsonResponse(final_data)
+
+    except Exception as e:
+        log_error(f"FINANCE Exception: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
 
 

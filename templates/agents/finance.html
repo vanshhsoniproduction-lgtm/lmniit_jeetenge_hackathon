@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Smart Portfolio Architect{% endblock %}
+{% block nav_finance %}active{% endblock %}
+
+{% block content %}
+<div class="panel" style="max-width: 900px; margin: 0 auto;">
+    
+    <!-- Header -->
+    <div style="margin-bottom: 32px; border-bottom: 1px solid var(--border-light); padding-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+            <div style="width: 48px; height: 48px; background: var(--bg-card); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text-main);">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <div>
+                <h1 class="font-bold text-xl">Smart Portfolio Architect</h1>
+                <p class="text-muted text-sm">AI-powered crypto investment advice & risk analysis</p>
+            </div>
+        </div>
+        <div class="font-mono text-xs text-dim">Using x402 Protocol • 0.0015 MON per request</div>
+    </div>
+
+    <!-- Input Form -->
+    <form id="financeForm">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <!-- Mode Selection -->
+            <div class="input-group">
+                <label class="input-label">I want to...</label>
+                <select id="analysisMode" class="input-field" onchange="toggleMode()">
+                    <option value="portfolio">Analyze My Current Portfolio</option>
+                    <option value="recommendation">Get Investment Recommendations</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label class="input-label">Risk Appetite</label>
+                <select id="riskAppetite" class="input-field">
+                    <option value="balanced">Balanced (Growth + Safety)</option>
+                    <option value="conservative">Conservative (Low Risk)</option>
+                    <option value="aggressive">Aggressive (High Return / High Risk)</option>
+                    <option value="degen">Degen (Moonshots Only 🚀)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label" id="inputLabel">Current Holdings</label>
+            <p class="text-xs text-dim mb-2" id="inputHelp">List your assets (e.g., "2 ETH, 5000 DOGE, 10 SOL")</p>
+            <textarea id="userInput" class="input-field" rows="4" placeholder="2.5 ETH, 1000 USDC, 500 MATIC..." required></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%;">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            Generate Financial Plan
+        </button>
+    </form>
+    
+    <!-- Results Area -->
+    <div id="resultArea" style="display: none; margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border-light);">
+        
+        <!-- Top Stats Cards -->
+        <div class="grid grid-cols-3 gap-4 mb-8">
+            <div class="bg-card p-4 rounded border border-light text-center">
+                <div class="text-xs text-dim uppercase mb-1">Risk Score</div>
+                <div class="text-2xl font-bold text-main" id="riskScore">--/100</div>
+            </div>
+            <div class="bg-card p-4 rounded border border-light text-center">
+                <div class="text-xs text-dim uppercase mb-1">Est. Value</div>
+                <div class="text-2xl font-bold text-main" id="estValue">--</div>
+            </div>
+            <div class="bg-card p-4 rounded border border-light text-center">
+                <div class="text-xs text-dim uppercase mb-1">Market Sentiment</div>
+                <div class="text-sm font-bold text-main mt-1" id="marketSentiment">--</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <!-- Pie Chart -->
+            <div class="md:col-span-1">
+                <h4 class="font-bold text-sm mb-4 text-center">Allocation Strategy</h4>
+                <div style="position: relative; height: 200px; width: 100%;">
+                    <canvas id="allocationChart"></canvas>
+                </div>
+                <!-- Allocation List -->
+                <div id="allocationList" class="mt-6 grid grid-cols-2 gap-3">
+                    <!-- Dynamic Items -->
+                </div>
+            </div>
+            
+            <!-- AI Analysis -->
+            <div class="md:col-span-2">
+                <h4 class="font-bold text-sm mb-4">🤖 Architect Analysis</h4>
+                <div id="aiSummary" class="text-sm text-dim italic mb-4 p-4 bg-body border border-light rounded"></div>
+                
+                <h4 class="font-bold text-sm mb-2">Action Plan</h4>
+                <div id="actionPlan" class="prose prose-invert text-sm text-muted"></div>
+            </div>
+        </div>
+
+        <!-- Detailed Tokens Table -->
+        <div class="mb-6">
+            <h4 class="font-bold text-sm mb-4">Asset Performance (Live Data)</h4>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse border border-light">
+                    <thead>
+                        <tr class="text-xs text-dim bg-body uppercase">
+                            <th class="p-4 border border-light">Asset</th>
+                            <th class="p-4 border border-light">Price</th>
+                            <th class="p-4 border border-light">24h Change</th>
+                            <th class="p-4 border border-light text-center">Rec. Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assetsTableBody" class="text-sm">
+                        <!-- Dynamic Rows -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let chartInstance = null;
+
+    function toggleMode() {
+        const mode = document.getElementById('analysisMode').value;
+        const label = document.getElementById('inputLabel');
+        const help = document.getElementById('inputHelp');
+        const input = document.getElementById('userInput');
+
+        if (mode === 'portfolio') {
+            label.innerText = "Current Holdings";
+            help.innerText = 'List your assets (e.g., "2 ETH, 5000 DOGE, 10 SOL")';
+            input.placeholder = "2.5 ETH, 1000 USDC, 500 MATIC...";
+        } else {
+            label.innerText = "Investment Amount";
+            help.innerText = "How much capital do you have to deploy?";
+            input.placeholder = "$1000 USD";
+        }
+    }
+
+    document.getElementById('financeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const mode = document.getElementById('analysisMode').value;
+        const risk = document.getElementById('riskAppetite').value;
+        const text = document.getElementById('userInput').value;
+        
+        const resultArea = document.getElementById('resultArea');
+        resultArea.style.display = 'none';
+
+        try {
+            const response = await window.x402Fetch('/api/x402/finance/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    mode: mode,
+                    risk_appetite: risk,
+                    user_input: text
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                resultArea.style.display = 'block';
+                
+                // 1. Stats
+                document.getElementById('riskScore').innerText = data.risk_score + "/100";
+                document.getElementById('riskScore').style.color = getRiskColor(data.risk_score);
+                document.getElementById('estValue').innerText = data.total_value_usd || "N/A";
+                document.getElementById('marketSentiment').innerText = data.market_sentiment;
+
+                // 2. Summary & Action Plan
+                document.getElementById('aiSummary').innerText = data.summary;
+                document.getElementById('actionPlan').innerHTML = marked.parse(data.action_plan);
+
+                // 3. Chart & List
+                renderChart(data.allocations);
+                renderAllocationList(data.allocations);
+
+                // 4. Table
+                renderTable(data.assets_analysis);
+
+            } else {
+                alert("Analysis failed: " + response.statusText);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("An error occurred.");
+        }
+    });
+
+    function getRiskColor(score) {
+        if (score < 30) return '#2ecc71'; // Green
+        if (score < 70) return '#f1c40f'; // Yellow
+        return '#e74c3c'; // Red
+    }
+
+    function renderChart(allocations) {
+        const ctx = document.getElementById('allocationChart').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+
+        if (!allocations || allocations.length === 0) return;
+
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: allocations.map(a => a.asset),
+                datasets: [{
+                    data: allocations.map(a => a.percentage),
+                    backgroundColor: [
+                        '#3498db', '#9b59b6', '#2ecc71', '#f1c40f', '#e67e22', '#e74c3c'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#888', font: { size: 10 } } }
+                }
+            }
+        });
+    }
+
+    function renderAllocationList(allocations) {
+        const container = document.getElementById('allocationList');
+        container.innerHTML = '';
+        if (!allocations) return;
+
+        allocations.forEach(a => {
+            const div = document.createElement('div');
+            div.className = "bg-body px-3 py-2 rounded border border-light text-xs flex justify-between items-center";
+            div.innerHTML = `
+                <span class="font-bold">${a.asset}</span>
+                <span class="font-mono text-main">${a.percentage}%</span>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function renderTable(assets) {
+        const tbody = document.getElementById('assetsTableBody');
+        tbody.innerHTML = '';
+        if (!assets) return;
+
+        assets.forEach(asset => {
+            const tr = document.createElement('tr');
+            tr.className = "border-b border-light hover:bg-hover transition";
+            
+            const colorClass = asset.change_24h >= 0 ? 'text-green-500' : 'text-red-500';
+            const sign = asset.change_24h >= 0 ? '+' : '';
+
+            // Handle very small prices (e.g. SHIB)
+            let priceDisplay = asset.price;
+            if (priceDisplay < 0.01) {
+                priceDisplay = priceDisplay.toFixed(6);
+            } else {
+                priceDisplay = priceDisplay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            tr.innerHTML = `
+                <td class="p-4 border border-light font-bold">${asset.symbol}</td>
+                <td class="p-4 border border-light font-mono">$${priceDisplay}</td>
+                <td class="p-4 border border-light ${colorClass} font-mono">${sign}${asset.change_24h}%</td>
+                <td class="p-4 border border-light text-center">
+                    <span class="text-xs font-bold px-2 py-1 rounded bg-body border border-light" style="color: ${getActionColor(asset.recommendation)}">
+                        ${asset.recommendation.toUpperCase()}
+                    </span>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function getActionColor(action) {
+        const a = action.toLowerCase();
+        if (a.includes('buy')) return '#2ecc71';
+        if (a.includes('sell')) return '#e74c3c';
+        return '#f1c40f'; // Hold
+    }
+</script>
+{% endblock %}

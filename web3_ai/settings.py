@@ -180,6 +180,10 @@ ELEVENLABS_API_KEY = config('ELEVENLABS_API_KEY', default='')
 # Free Tier: 14,400 req/day, 30 req/min (Gemini se 100x zyada!)
 GROQ_API_KEY = config('GROQ_API_KEY', default='')
 
+# CoinGecko API Key - Live Market Data
+# Demo Key: 30 calls/minute
+COINGECKO_API_KEY = config('COINGECKO_API_KEY', default='')
+
 # ===========================================
 # DATABASE: Default SQLite use ho raha hai
 # Future mein PostgreSQL use karna ho to uncomment karo:

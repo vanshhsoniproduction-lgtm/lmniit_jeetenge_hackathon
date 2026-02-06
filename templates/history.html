@@ -143,10 +143,22 @@
     .chat-bubble.speaker-B .bubble-content { background: var(--bg-hover); border-color: var(--border-hover); }
 
     /* Output Styling */
-    .md-content { line-height: 1.6; color: var(--text-muted); }
-    .md-content h1, .md-content h2, .md-content h3 { color: var(--text-main); margin-top: 16px; margin-bottom: 8px; font-weight: bold; }
-    .md-content ul { list-style-type: disc; padding-left: 20px; margin-bottom: 16px; }
-    .md-content li { margin-bottom: 4px; }
+    /* Output Styling */
+    .md-content { line-height: 1.6; color: var(--text-muted); font-size: 14px; }
+    .md-content h1 { font-size: 1.5em; color: var(--text-main); margin-top: 1.5em; margin-bottom: 0.8em; font-weight: 700; border-bottom: 1px solid var(--border-light); padding-bottom: 0.3em; }
+    .md-content h2 { font-size: 1.3em; color: var(--text-main); margin-top: 1.4em; margin-bottom: 0.6em; font-weight: 600; }
+    .md-content h3 { font-size: 1.1em; color: var(--text-main); margin-top: 1.2em; margin-bottom: 0.5em; font-weight: 600; }
+    .md-content p { margin-bottom: 1em; }
+    .md-content ul, .md-content ol { padding-left: 1.5em; margin-bottom: 1em; }
+    .md-content ul { list-style-type: disc; }
+    .md-content ol { list-style-type: decimal; }
+    .md-content li { margin-bottom: 0.3em; }
+    .md-content strong { color: var(--text-main); font-weight: 600; }
+    .md-content code { background: var(--bg-hover); padding: 2px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.9em; border: 1px solid var(--border-light); }
+    .md-content pre { background: var(--bg-panel); padding: 1em; border-radius: 8px; overflow-x: auto; margin-bottom: 1.5em; border: 1px solid var(--border-light); }
+    .md-content pre code { background: none; padding: 0; border: none; color: inherit; }
+    .md-content blockquote { border-left: 3px solid var(--border-hover); padding-left: 1em; color: var(--text-dim); font-style: italic; margin-bottom: 1em; }
+    .md-content a { color: #3b82f6; text-decoration: underline; }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -188,7 +200,11 @@
 
         if (category === 'AUDIO') {
             renderAudioView(modalContent, data);
-        } else if (['GITHUB', 'YT-DOCS', 'YTDOCS', 'SCRAPER', 'COMPETESCAN'].includes(category)) {
+        } else if (category === 'COMPETESCAN') {
+            renderCompeteScanView(modalContent, data);
+        } else if (category === 'FINANCE') {
+            renderFinanceView(modalContent, data);
+        } else if (['GITHUB', 'YT-DOCS', 'YTDOCS', 'SCRAPER'].includes(category)) {
             renderMarkdownView(modalContent, data);
         } else {
             renderGenericView(modalContent, data);
@@ -283,6 +299,115 @@
         }
         
         container.innerHTML = html;
+    }
+
+    function renderCompeteScanView(container, data) {
+        let html = `
+            <div class="mb-6">
+                <h3 class="font-bold text-lg mb-1 text-main">Competitor Analysis</h3>
+                ${data.summary?.one_line ? `<p class="text-sm text-dim italic">${data.summary.one_line}</p>` : ''}
+            </div>
+        `;
+
+        // 1. Business Overview
+        if (data.business_overview) {
+            html += `
+            <div class="mb-6">
+                <h4 class="font-bold text-md mb-3 text-main uppercase tracking-wide text-xs">Business Overview</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-card p-4 rounded border border-light">
+                    <div><div class="text-xs text-dim uppercase">Type</div><div class="text-sm text-main">${data.business_overview.type || 'N/A'}</div></div>
+                    <div><div class="text-xs text-dim uppercase">Region</div><div class="text-sm text-main">${data.business_overview.region || 'N/A'}</div></div>
+                    <div class="md:col-span-2"><div class="text-xs text-dim uppercase">Target Audience</div><div class="text-sm text-main">${data.business_overview.icp || 'N/A'}</div></div>
+                </div>
+            </div>`;
+        }
+
+        // 2. Pricing
+        if (data.pricing) {
+            html += `
+            <div class="mb-6">
+                <h4 class="font-bold text-md mb-3 text-main uppercase tracking-wide text-xs">Pricing & Business Model</h4>
+                <div class="bg-card p-4 rounded border border-light">
+                    <div class="flex gap-8 mb-3">
+                        <div><div class="text-xs text-dim uppercase">Model</div><div class="text-sm text-main">${data.pricing.model || 'N/A'}</div></div>
+                        <div><div class="text-xs text-dim uppercase">Free Trial</div><div class="text-sm text-main">${data.pricing.free_trial ? 'Yes' : 'No'}</div></div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-dim uppercase mb-1">Plans</div>
+                        <ul class="list-disc pl-4 text-sm text-muted">
+                            ${(data.pricing.plans || []).map(p => `<li>${p}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // 3. SWOT
+        if (data.strengths_weaknesses) {
+            html += `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <h4 class="font-bold text-md mb-2 text-main border-b border-light pb-2">Strengths</h4>
+                    <ul class="list-disc pl-4 text-sm text-muted space-y-1">
+                        ${(data.strengths_weaknesses.strengths || []).map(s => `<li>${s}</li>`).join('')}
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-md mb-2 text-main border-b border-light pb-2">Weaknesses</h4>
+                    <ul class="list-disc pl-4 text-sm text-muted space-y-1">
+                        ${(data.strengths_weaknesses.weaknesses || []).map(w => `<li>${w}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>`;
+        }
+
+        container.innerHTML = html;
+    }
+
+    function renderFinanceView(container, data) {
+        // Stats
+        let statsHtml = `
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="bg-card p-4 rounded border border-light text-center">
+                    <div class="text-xs text-dim uppercase mb-1">Risk Score</div>
+                    <div class="text-2xl font-bold text-main" style="color: ${data.risk_score > 70 ? '#e74c3c' : (data.risk_score < 30 ? '#2ecc71' : '#f1c40f')}">${data.risk_score}/100</div>
+                </div>
+                <div class="bg-card p-4 rounded border border-light text-center">
+                    <div class="text-xs text-dim uppercase mb-1">Value</div>
+                    <div class="text-xl font-bold text-main">${data.total_value_usd || 'N/A'}</div>
+                </div>
+                <div class="bg-card p-4 rounded border border-light text-center">
+                    <div class="text-xs text-dim uppercase mb-1">Sentiment</div>
+                    <div class="text-sm font-bold text-main mt-1">${data.market_sentiment || 'N/A'}</div>
+                </div>
+            </div>
+        `;
+
+        // Allocations (Text based for history view to avoid complex chart re-init issues)
+        let allocHtml = '';
+        if (data.allocations && data.allocations.length > 0) {
+            allocHtml = `
+            <div class="mb-6">
+                <h4 class="font-bold text-sm mb-3">AI Recommended Allocation</h4>
+                <div class="flex flex-wrap gap-2">
+                    ${data.allocations.map(a => `
+                        <div class="bg-card px-3 py-2 rounded border border-light text-sm">
+                            <span class="font-bold">${a.asset}</span>: <span class="text-dim">${a.percentage}%</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+
+        // Action Plan
+        let adviceHtml = '';
+        if (data.action_plan) {
+            adviceHtml = `<div class="md-content prose prose-invert text-sm">${marked.parse(data.action_plan)}</div>`;
+        } else if (data.summary) {
+            adviceHtml = `<p class="text-sm text-muted">${data.summary}</p>`;
+        }
+
+        container.innerHTML = statsHtml + allocHtml + '<hr class="border-light my-6 opacity-30">' + adviceHtml;
     }
 
     function renderGenericView(container, data) {

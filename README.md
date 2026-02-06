@@ -1,4 +1,3 @@
-<p align="center">
   <img src="https://img.shields.io/badge/Web3-AI-blueviolet?style=for-the-badge&logo=ethereum&logoColor=white" alt="Web3 AI" />
   <img src="https://img.shields.io/badge/Monad-Testnet-orange?style=for-the-badge" alt="Monad" />
   <img src="https://img.shields.io/badge/Django-5.1-green?style=for-the-badge&logo=django" alt="Django" />
@@ -70,11 +69,12 @@
 </td>
 <td width="50%">
 
-### 🧠 4 AI Agents
+### 🧠 5 AI Agents
 - GitHub Repository Analyzer
 - Voice Intelligence (Audio→Text)
 - CompeteScan (Competitor Analysis)
 - Web Scraper
+- Smart Portfolio Architect
 
 </td>
 </tr>
@@ -134,6 +134,7 @@
 | 📦 **GitHub Architect** | `/api/x402/github/` | 0.0005 MON | Analyzes repos: architecture, issues, PRs |
 | 📊 **CompeteScan AI** | `/api/x402/competescan/` | 0.0010 MON | Competitor analysis with SWOT |
 | 🎤 **Voice Intelligence** | `/api/x402/audio/` | 0.0011 MON | Audio transcription + meeting notes |
+| 📈 **Smart Portfolio** | `/api/x402/finance/` | 0.0015 MON | AI Crypto Investment Advisor & Risk Analysis |
 
 ---
 
@@ -146,7 +147,8 @@
 | Python 3.11+ | Programming Language |
 | web3.py | Blockchain Interactions |
 | Google Gemini | AI Analysis Engine |
-| ElevenLabs | Speech-to-Text |
+| ElevenLabs | Speech-to-text |
+| CoinGecko | Real-time Market Data |
 
 ### Frontend
 | Technology | Purpose |
@@ -205,8 +207,9 @@ web3_ai/
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/Vanshhsoni/lnmiit_jeetenge_hackathon.git
-cd lnmiit_jeetenge_hackathon/web3_ai
+```bash
+git clone https://github.com/Vanshhsoni/web3_ai.git
+cd web3_ai
 ```
 
 ### 2. Create Virtual Environment
@@ -337,7 +340,7 @@ const res = await window.x402Fetch('/api/x402/my-agent/', {
 
 ## 📄 License
 
-This project is built for **LNMIIT Jeetenge Hackathon**.
+This project is a **Web3-native implementation** of the Autonomous Agent Economy.
 
 ---
 
@@ -346,7 +349,7 @@ This project is built for **LNMIIT Jeetenge Hackathon**.
 </p>
 
 <p align="center">
-  Built with ❤️ for LNMIIT Jeetenge Hackathon
+  Built with ❤️ by Web3.AI Team
 </p>
 
 <p align="center">
